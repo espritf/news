@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use anyhow::Result;
+use rss::Channel;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -28,7 +29,11 @@ fn main() {
 
 fn fetch(url: &String) -> Result<()> {
     let res = reqwest::blocking::get(url)?.text()?;
+    let channel = Channel::read_from(res.as_bytes())?;
 
-    println!("{res}");
+    for item in channel.items().iter() {
+        println!("{:#?}", item);
+    }
+
     Ok(())
 }
