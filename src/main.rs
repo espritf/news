@@ -1,12 +1,14 @@
+pub mod models;
+pub mod schema;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use dotenvy::dotenv;
-use rss::Channel;
+use rss;
 use std::env;
 
-pub mod models;
-pub mod schema;
+use crate::models::{NewChannel, Channel};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -44,11 +46,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn fetch_channel(url: &String) -> Result<models::NewChannel> {
+fn fetch_channel(url: &String) -> Result<NewChannel> {
     let res = reqwest::blocking::get(url)?.text()?;
-    let channel = Channel::read_from(res.as_bytes())?;
+    let channel = rss::Channel::read_from(res.as_bytes())?;
 
-    Ok(models::NewChannel {
+    Ok(NewChannel {
         title: channel.title,
         link: url.clone(),
         language: channel.language.unwrap(),
@@ -56,13 +58,13 @@ fn fetch_channel(url: &String) -> Result<models::NewChannel> {
     })
 }
 
-fn add_channel(conn: &mut SqliteConnection, channel: models::NewChannel) {
+fn add_channel(conn: &mut SqliteConnection, channel: NewChannel) {
 
     use crate::schema::channels;
 
     diesel::insert_or_ignore_into(channels::table)
         .values(&channel)
-        .returning(models::Channel::as_returning())
+        .returning(Channel::as_returning())
         .get_result(conn)
         .expect("Error saving new channel");
 }
