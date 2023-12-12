@@ -1,5 +1,6 @@
 use super::schema::channels;
 use diesel::prelude::*;
+use chrono::NaiveDateTime;
 
 #[derive(Debug, Insertable)]
 #[diesel(table_name = channels)]
@@ -7,7 +8,7 @@ pub struct NewChannel {
     pub title: String,
     pub link: String,
     pub language: String,
-    pub last_build_date: String,
+    pub last_build_date: NaiveDateTime,
 }
 
 #[derive(Queryable, Selectable)]
@@ -18,5 +19,5 @@ pub struct Channel {
     pub title: String,
     pub link: String,
     pub language: String,
-    pub last_build_date: String,
+    pub last_build_date: NaiveDateTime,
 }
