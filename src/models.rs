@@ -1,6 +1,6 @@
 use super::schema::channels;
-use diesel::prelude::*;
 use chrono::NaiveDateTime;
+use diesel::prelude::*;
 
 #[derive(Debug, Insertable)]
 #[diesel(table_name = channels)]
