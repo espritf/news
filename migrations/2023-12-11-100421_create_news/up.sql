@@ -2,7 +2,7 @@ create table channels
 (
     id              integer primary key not null ,
     title           text not null,
-    link            text not null,
+    link            text not null unique,
     language        text not null ,
     last_build_date timestamp not null
 );

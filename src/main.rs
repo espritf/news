@@ -8,7 +8,7 @@ use dotenvy::dotenv;
 use rss;
 use std::env;
 
-use crate::models::{NewChannel, Channel};
+use crate::models::NewChannel;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -64,7 +64,7 @@ fn add_channel(conn: &mut SqliteConnection, channel: NewChannel) {
 
     diesel::insert_or_ignore_into(channels::table)
         .values(&channel)
-        .returning(Channel::as_returning())
-        .get_result(conn)
+        .on_conflict_do_nothing()
+        .execute(conn)
         .expect("Error saving new channel");
 }
