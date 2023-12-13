@@ -1,15 +1,13 @@
 pub mod models;
 pub mod schema;
+pub mod collector;
+pub mod repository;
 
 use anyhow::Result;
-use chrono::DateTime;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use dotenvy::dotenv;
-use rss;
 use std::env;
-
-use crate::models::NewChannel;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -39,34 +37,10 @@ fn main() -> Result<()> {
     match &cli.command {
         Commands::Add { url } => {
             println!("add channel from url: {url:?}");
-            let channel = fetch_channel(url)?;
-            add_channel(conn, channel);
+            let channel = collector::fetch_channel(url)?;
+            repository::add_channel(conn, channel);
         }
     }
 
     Ok(())
-}
-
-fn fetch_channel(url: &String) -> Result<NewChannel> {
-    let res = reqwest::blocking::get(url)?.text()?;
-    let channel = rss::Channel::read_from(res.as_bytes())?;
-    let last_build_date =
-        DateTime::parse_from_rfc2822(channel.last_build_date().unwrap())?.naive_local();
-
-    Ok(NewChannel {
-        title: channel.title,
-        link: url.clone(),
-        language: channel.language.unwrap(),
-        last_build_date: last_build_date,
-    })
-}
-
-fn add_channel(conn: &mut SqliteConnection, channel: NewChannel) {
-    use crate::schema::channels;
-
-    diesel::insert_or_ignore_into(channels::table)
-        .values(&channel)
-        .on_conflict_do_nothing()
-        .execute(conn)
-        .expect("Error saving new channel");
 }
