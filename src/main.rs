@@ -20,7 +20,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Fetch data from given url
+    /// Add channel
     Add { url: String },
 }
 
