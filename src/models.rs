@@ -2,7 +2,7 @@ use super::schema::channels;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
-#[derive(Debug, Insertable)]
+#[derive(Debug, Insertable, AsChangeset)]
 #[diesel(table_name = channels)]
 pub struct NewChannel {
     pub title: String,
