@@ -1,7 +1,7 @@
 use diesel::prelude::*;
-use crate::models::NewChannel;
+use crate::models::input::Channel;
 
-pub fn add_channel(conn: &mut SqliteConnection, channel: NewChannel) {
+pub fn add_channel(conn: &mut SqliteConnection, channel: Channel) {
     use crate::schema::channels;
 
     diesel::insert_into(channels::table)
