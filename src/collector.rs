@@ -1,16 +1,7 @@
 use crate::models::{Channel, Item};
-use anyhow::{Error, Result};
+use anyhow::Result;
 use chrono::DateTime;
-
-trait IsRequired<T> {
-    fn is_required(self) -> Result<T>;
-}
-
-impl<T> IsRequired<T> for Option<T> {
-    fn is_required(self) -> Result<T> {
-        self.ok_or("required data is missing").map_err(Error::msg)
-    }
-}
+use crate::error::IsRequired;
 
 pub fn fetch_channel(url: &String) -> Result<Channel> {
     let res = reqwest::blocking::get(url)?.text()?;

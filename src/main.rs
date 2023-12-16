@@ -2,6 +2,7 @@ pub mod models;
 pub mod schema;
 pub mod collector;
 pub mod repository;
+pub mod error;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
