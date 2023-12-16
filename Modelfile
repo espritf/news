@@ -1,0 +1,6 @@
+
+FROM mistral
+PARAMETER temperature 1
+SYSTEM """
+Translate provided news title in UK English.
+"""
