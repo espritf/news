@@ -12,8 +12,7 @@ pub fn collect(conn: &mut SqliteConnection, url: &String) -> Result<()> {
 
     let (channel, items) = prepare(url, &ch)?;
 
-    persist(conn, &channel, &items);
-    Ok(())
+    persist(conn, &channel, &items)
 }
 
 #[derive(Debug, Insertable)]
@@ -73,7 +72,7 @@ fn prepare<'a>(url: &'a str, ch: &'a rss::Channel) -> Result<(Channel<'a>, Vec<I
     Ok((channel, items))
 }
 
-fn persist(conn: &mut SqliteConnection, channel: &Channel, items: &[Item]) {
+fn persist(conn: &mut SqliteConnection, channel: &Channel, items: &[Item]) -> Result<()> {
 
     let id = diesel::insert_into(channels::table)
         .values(channel)
@@ -81,8 +80,7 @@ fn persist(conn: &mut SqliteConnection, channel: &Channel, items: &[Item]) {
         .do_update()
         .set((channels::last_build_date.eq(channel.last_build_date),))
         .returning(channels::id)
-        .execute(conn)
-        .expect("Error saving new channel");
+        .execute(conn)?;
 
     for &item in items {
         diesel::insert_into(items::table)
@@ -91,7 +89,8 @@ fn persist(conn: &mut SqliteConnection, channel: &Channel, items: &[Item]) {
                 item,
             })
             .on_conflict_do_nothing()
-            .execute(conn)
-            .expect("Error saving new item");
+            .execute(conn)?;
     }
+
+    Ok(())
 }
