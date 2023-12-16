@@ -1,28 +1,38 @@
 use crate::models::{Channel, Item};
-use anyhow::Result;
+use anyhow::{Error, Result};
 use chrono::DateTime;
+
+trait IsRequired<T> {
+    fn is_required(self) -> Result<T>;
+}
+
+impl<T> IsRequired<T> for Option<T> {
+    fn is_required(self) -> Result<T> {
+        self.ok_or("required data is missing").map_err(Error::msg)
+    }
+}
 
 pub fn fetch_channel(url: &String) -> Result<Channel> {
     let res = reqwest::blocking::get(url)?.text()?;
     let ch = rss::Channel::read_from(res.as_bytes())?;
 
-    let last_build_date = DateTime::parse_from_rfc2822(ch.last_build_date().unwrap())?;
+    let last_build_date = DateTime::parse_from_rfc2822(ch.last_build_date().is_required()?)?;
 
     let channel = Channel::new(
         ch.title(),
         &url,
-        ch.language().unwrap(),
+        ch.language().is_required()?,
         last_build_date.naive_local(),
         ch.items()
             .iter()
             .map(|i| -> Result<Item> {
-                let pub_date = DateTime::parse_from_rfc2822(i.pub_date().unwrap())?;
+                let pub_date = DateTime::parse_from_rfc2822(i.pub_date().is_required()?)?;
 
                 let item = Item::new(
-                    i.guid().unwrap().value(),
-                    i.title().unwrap(),
-                    i.link().unwrap(),
-                    i.description().unwrap(),
+                    i.guid().is_required()?.value(),
+                    i.title().is_required()?,
+                    i.link().is_required()?,
+                    i.description().is_required()?,
                     pub_date.naive_local(),
                 );
 
