@@ -15,6 +15,7 @@ create table items
     title       text not null,
     link        text not null,
     description text not null,
+    tags        text_json,
     pub_date    timestamp not null ,
     foreign key (channel_id) references channels (id) on delete cascade
 );

@@ -23,13 +23,14 @@ struct Channel<'a> {
     last_build_date: NaiveDateTime,
 }
 
-#[derive(Debug, Clone, Copy, Insertable)]
+#[derive(Debug, Clone, Insertable)]
 struct Item<'a> {
     guid: &'a str,
     title: &'a str,
     link: &'a str,
     description: &'a str,
     pub_date: NaiveDateTime,
+    tags: String,
 }
 
 #[derive(Insertable)]
@@ -56,6 +57,7 @@ fn prepare<'a>(url: &'a str, ch: &'a rss::Channel) -> Result<(Channel<'a>, Vec<I
         .iter()
         .map(|i| {
             let pub_date = DateTime::parse_from_rfc2822(i.pub_date().is_required()?)?;
+            let tags: Vec<&str>  = i.categories().iter().map(|c| c.name()).collect();
 
             let item = Item {
                 guid: i.guid().is_required()?.value(),
@@ -63,6 +65,7 @@ fn prepare<'a>(url: &'a str, ch: &'a rss::Channel) -> Result<(Channel<'a>, Vec<I
                 link: i.link().is_required()?,
                 description: i.description().is_required()?,
                 pub_date: pub_date.naive_local(),
+                tags: serde_json::to_string(&tags)?,
             };
 
             Ok(item)
@@ -82,11 +85,11 @@ fn persist(conn: &mut SqliteConnection, channel: &Channel, items: &[Item]) -> Re
         .returning(channels::id)
         .execute(conn)?;
 
-    for &item in items {
+    for item in items {
         diesel::insert_into(items::table)
             .values(ItemOfChannel {
                 channel_id: id as i32,
-                item,
+                item: item.clone(),
             })
             .on_conflict_do_nothing()
             .execute(conn)?;
