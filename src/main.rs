@@ -7,6 +7,8 @@ use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;
+use serde::Deserialize;
+use std::fs;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -17,25 +19,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Add channel
-    Add { url: String },
+    /// Fetch data from all sources
+    Fetch
 }
 
-pub fn establish_connection() -> SqliteConnection {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+#[derive(Deserialize, Debug)]
+struct Config {
+    sources: Vec<collector::sources::Config>,
 }
 
 fn main() -> Result<()> {
     dotenv().ok();
 
     let cli = Cli::parse();
-    let conn = &mut establish_connection();
-
     match &cli.command {
-        Commands::Add { url } => {
-            let _ = collector::collect(conn, url)?;
+        Commands::Fetch => {
+            let conn = &mut SqliteConnection::establish(&env::var("DATABASE_URL")?)?;
+            let config: Config = toml::from_str(fs::read_to_string("sources.toml")?.as_str())?;
+
+            let _ = collector::collect(conn, config.sources)?;
         }
     }
 
