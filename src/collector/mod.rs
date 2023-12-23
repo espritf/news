@@ -18,6 +18,7 @@ pub fn collect(conn: &mut SqliteConnection, sources: Vec<Config>) -> Result<()> 
 #[diesel(table_name = items)]
 struct ItemOfChannel {
     channel_id: i32,
+    published: bool,
     #[diesel(embed)]
     item: Item,
 }
@@ -35,6 +36,7 @@ fn persist<'a>(conn: &mut SqliteConnection, data: Data) -> Result<()> {
         diesel::insert_into(items::table)
             .values(ItemOfChannel {
                 channel_id: id as i32,
+                published: false,
                 item: item.clone(),
             })
             .on_conflict_do_nothing()

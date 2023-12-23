@@ -1,4 +1,5 @@
 pub mod collector;
+pub mod translator;
 pub mod error;
 pub mod schema;
 
@@ -21,6 +22,8 @@ struct Cli {
 enum Commands {
     /// Fetch data from all sources
     Fetch,
+    /// Publish translated news
+    Publish,
 }
 
 #[derive(Deserialize, Debug)]
@@ -32,12 +35,15 @@ fn main() -> Result<()> {
     dotenv().ok();
 
     let cli = Cli::parse();
+    let conn = &mut SqliteConnection::establish(&env::var("DATABASE_URL")?)?;
+
     match &cli.command {
         Commands::Fetch => {
-            let conn = &mut SqliteConnection::establish(&env::var("DATABASE_URL")?)?;
             let config: Config = toml::from_str(fs::read_to_string("sources.toml")?.as_str())?;
-
             let _ = collector::collect(conn, config.sources)?;
+        },
+        Commands::Publish => {
+            let _ = translator::publish(conn)?;
         }
     }
 

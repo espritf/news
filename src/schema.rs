@@ -19,12 +19,24 @@ diesel::table! {
         link -> Text,
         tags -> Nullable<Text>,
         pub_date -> Timestamp,
+        published -> Nullable<Bool>,
+    }
+}
+
+diesel::table! {
+    news (id) {
+        id -> Integer,
+        source_id -> Integer,
+        title -> Text,
+        pub_date -> Timestamp,
     }
 }
 
 diesel::joinable!(items -> channels (channel_id));
+diesel::joinable!(news -> items (source_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     channels,
     items,
+    news,
 );
