@@ -6,7 +6,7 @@ diesel::table! {
         title -> Text,
         link -> Text,
         language -> Text,
-        last_build_date -> Timestamp,
+        last_build_date -> Nullable<Timestamp>,
     }
 }
 
@@ -17,7 +17,6 @@ diesel::table! {
         guid -> Text,
         title -> Text,
         link -> Text,
-        description -> Text,
         tags -> Nullable<Text>,
         pub_date -> Timestamp,
     }

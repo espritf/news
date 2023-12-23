@@ -1,13 +1,13 @@
-pub mod schema;
 pub mod collector;
 pub mod error;
+pub mod schema;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use dotenvy::dotenv;
-use std::env;
 use serde::Deserialize;
+use std::env;
 use std::fs;
 
 #[derive(Parser)]
@@ -20,7 +20,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Fetch data from all sources
-    Fetch
+    Fetch,
 }
 
 #[derive(Deserialize, Debug)]

@@ -21,7 +21,7 @@ pub fn fetch(config: &Config) -> Result<Data> {
         title: ch.title().to_owned(),
         link: config.url.as_str().to_owned(),
         language: ch.language().is_required()?.to_owned(),
-        last_build_date: last_build_date.naive_local(),
+        last_build_date: Some(last_build_date.naive_local()),
     };
 
     let items = ch
@@ -35,9 +35,8 @@ pub fn fetch(config: &Config) -> Result<Data> {
                 guid: i.guid().is_required()?.value().to_owned(),
                 title: i.title().is_required()?.to_owned(),
                 link: i.link().is_required()?.to_owned(),
-                description: i.description().is_required()?.to_owned(),
                 pub_date: pub_date.naive_local().to_owned(),
-                tags: serde_json::to_string(&tags)?,
+                tags: Some(serde_json::to_string(&tags)?),
             };
 
             Ok(item)
