@@ -58,7 +58,7 @@ impl DateExtractor {
 }
 
 pub fn fetch(config: &Config) -> Result<Data> {
-    println!("Fetch data from {}", &config.url);
+    tracing::info!("Fetch data from {}", &config.url);
 
     let res = reqwest::blocking::get(&config.url)?.text()?;
     let document = Html::parse_document(&res);

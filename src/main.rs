@@ -34,15 +34,22 @@ struct Config {
 fn main() -> Result<()> {
     dotenv().ok();
 
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)?;
+
     let cli = Cli::parse();
     let conn = &mut SqliteConnection::establish(&env::var("DATABASE_URL")?)?;
 
     match &cli.command {
         Commands::Fetch => {
+            tracing::info!("Start fetch task");
             let config: Config = toml::from_str(fs::read_to_string("sources.toml")?.as_str())?;
             let _ = collector::collect(conn, config.sources)?;
         },
         Commands::Publish => {
+            tracing::info!("Start publish task");
             let _ = translator::publish(conn)?;
         }
     }

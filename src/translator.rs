@@ -20,7 +20,7 @@ struct Response {
 }
 
 fn translate(text: &str) -> Result<String> {
-    println!("Translate text: {}", text);
+    tracing::info!("Translate text: {}", text);
 
     let json = &serde_json::json!({
         "model": "translator",
@@ -53,6 +53,7 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
         let news = News {
             source_id: id,
             title: if lang == "en" {
+                tracing::info!("Skip translation for {}", title);
                 title
             } else {
                 translate(&title)?
@@ -61,7 +62,7 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
         };
 
         conn.transaction(|c| -> Result<()> {
-            println!("Publish news: {}", news.title);
+            tracing::info!("Publish news with title: {}", news.title);
 
             diesel::insert_into(news::table).values(&news).execute(c)?;
             diesel::update(items::table.filter(items::id.eq(id)))
