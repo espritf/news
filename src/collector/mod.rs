@@ -32,16 +32,21 @@ fn persist<'a>(conn: &mut SqliteConnection, data: Data) -> Result<()> {
         .returning(channels::id)
         .execute(conn)?;
 
-    for item in data.items {
-        diesel::insert_into(items::table)
-            .values(ItemOfChannel {
-                channel_id: id as i32,
-                published: false,
-                item: item.clone(),
-            })
-            .on_conflict_do_nothing()
-            .execute(conn)?;
-    }
+    let items: Vec<ItemOfChannel> = data
+        .items
+        .iter()
+        .map(|item| ItemOfChannel {
+            channel_id: id as i32,
+            published: false,
+            item: item.clone(),
+        })
+        .collect();
+
+    let n = diesel::insert_or_ignore_into(items::table)
+        .values(items)
+        .execute(conn)?;
+
+    tracing::info!("Persisted {} new items", n);
 
     Ok(())
 }
