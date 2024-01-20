@@ -1,8 +1,3 @@
-pub mod collector;
-pub mod translator;
-pub mod error;
-pub mod schema;
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
@@ -10,6 +5,9 @@ use dotenvy::dotenv;
 use serde::Deserialize;
 use std::env;
 use std::fs;
+
+use news::collector;
+use news::translator;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
