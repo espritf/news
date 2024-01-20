@@ -45,7 +45,8 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
 
     let items: Vec<Item> = items::table
         .inner_join(channels::table)
-        .filter(items::published.eq(false))
+        .left_join(news::table)
+        .filter(news::id.is_null())
         .select((items::id, items::title, items::pub_date, channels::language))
         .load(conn)?;
 
@@ -68,9 +69,7 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
             tracing::info!("Publish news with title: {}", news.title);
 
             diesel::insert_into(news::table).values(&news).execute(c)?;
-            diesel::update(items::table.filter(items::id.eq(id)))
-                .set(items::published.eq(true))
-                .execute(c)?;
+
             Ok(())
         })?;
     }

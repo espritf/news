@@ -19,7 +19,6 @@ diesel::table! {
         link -> Text,
         tags -> Nullable<Text>,
         pub_date -> Timestamp,
-        published -> Nullable<Bool>,
     }
 }
 

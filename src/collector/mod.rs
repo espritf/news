@@ -18,7 +18,6 @@ pub fn collect(conn: &mut SqliteConnection, sources: Vec<Config>) -> Result<()> 
 #[diesel(table_name = items)]
 struct ItemOfChannel {
     channel_id: i32,
-    published: bool,
     #[diesel(embed)]
     item: Item,
 }
@@ -37,7 +36,6 @@ fn persist<'a>(conn: &mut SqliteConnection, data: Data) -> Result<()> {
         .iter()
         .map(|item| ItemOfChannel {
             channel_id: id,
-            published: false,
             item: item.clone(),
         })
         .collect();
