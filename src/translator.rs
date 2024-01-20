@@ -50,14 +50,17 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
         .load(conn)?;
 
     for (id, title, pub_date, lang) in items {
+
+        let title = if lang == "en" {
+            tracing::info!("Skip translation for {}", title);
+            title
+        } else {
+            translate(&title)?
+        };
+
         let news = News {
             source_id: id,
-            title: if lang == "en" {
-                tracing::info!("Skip translation for {}", title);
-                title
-            } else {
-                translate(&title)?
-            },
+            title,
             pub_date,
         };
 

@@ -30,13 +30,13 @@ fn persist<'a>(conn: &mut SqliteConnection, data: Data) -> Result<()> {
         .do_update()
         .set((channels::last_build_date.eq(data.channel.last_build_date),))
         .returning(channels::id)
-        .execute(conn)?;
+        .get_result::<i32>(conn)?;
 
     let items: Vec<ItemOfChannel> = data
         .items
         .iter()
         .map(|item| ItemOfChannel {
-            channel_id: id as i32,
+            channel_id: id,
             published: false,
             item: item.clone(),
         })
