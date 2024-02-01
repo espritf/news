@@ -5,6 +5,7 @@ use axum::{
     routing::get,
     Router,
 };
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use news::news::news_list;
 use news::app::AppState;
@@ -20,10 +21,14 @@ async fn main() -> Result<()> {
 
     let state = AppState::build(uri)?;
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any);
+
     let app = Router::new()
         .route("/", get(news_list))
         .layer(TraceLayer::new_for_http())
-        .with_state(state);
+        .with_state(state)
+        .layer(cors);
 
     let listener = tokio::net::TcpListener::bind(address).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
