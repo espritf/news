@@ -6,8 +6,8 @@ use axum::Json;
 use chrono::NaiveDateTime;
 use deadpool_diesel::sqlite::Pool;
 use diesel::deserialize::Queryable;
-use diesel::query_dsl::methods::SelectDsl;
-use diesel::{RunQueryDsl, Selectable, SelectableHelper};
+use diesel::query_dsl::methods::{OrderDsl, SelectDsl};
+use diesel::{ExpressionMethods, RunQueryDsl, Selectable, SelectableHelper};
 use serde::Serialize;
 use anyhow::Result;
 
@@ -24,6 +24,7 @@ async fn get_news(pool: &Pool) -> Result<Vec<News>, Box<dyn std::error::Error>> 
     let conn = pool.get().await?;
     let res = conn.interact(|c| {
         news.select(News::as_select())
+            .order(pub_date.desc())
             .load::<News>(c)
     })
     .await??;
