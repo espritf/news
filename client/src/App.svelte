@@ -15,7 +15,7 @@
     {:then news}
         {#each news as item}
             <div>
-                <h4>{item.title}</h4>
+                <p>{item.title}</p>
                 <small>{new Date(item.pub_date).toUTCString()}</small>
             </div>
         {/each}
