@@ -1,43 +1,45 @@
 use crate::app::AppState;
+use crate::schema::channels;
+use crate::schema::items;
 use crate::schema::news;
+use anyhow::Result;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use chrono::NaiveDateTime;
 use deadpool_diesel::sqlite::Pool;
 use diesel::deserialize::Queryable;
-use diesel::query_dsl::methods::{OrderDsl, SelectDsl, FilterDsl};
-use diesel::{ExpressionMethods, RunQueryDsl, Selectable, SelectableHelper};
-use serde::Serialize;
-use anyhow::Result;
 use diesel::dsl::{date, now};
+use diesel::RunQueryDsl;
+use diesel::{ExpressionMethods, QueryDsl};
+use serde::Serialize;
 
-#[derive(Serialize, Selectable, Queryable)]
-#[diesel(table_name = news)]
+#[derive(Serialize, Queryable, PartialEq, Debug)]
 pub struct News {
     title: String,
     pub_date: NaiveDateTime,
+    link: String,
+    source: String,
 }
 
 async fn get_news(pool: &Pool) -> Result<Vec<News>, Box<dyn std::error::Error>> {
-    use crate::schema::news::dsl::*;
-
     let conn = pool.get().await?;
-    let res = conn.interact(|c| {
-        news.select(News::as_select())
-            .filter(date(pub_date).eq(date(now)))
-            .order(pub_date.desc())
-            .load::<News>(c)
-    })
-    .await??;
+    let res = conn
+        .interact(|c| {
+            news::table
+                .inner_join(items::table.inner_join(channels::table))
+                .select((news::title, news::pub_date, items::link, channels::title))
+                .filter(date(news::pub_date).eq(date(now)))
+                .order(news::pub_date.desc())
+                .load::<News>(c)
+        })
+        .await??;
 
     Ok(res)
 }
 
-
 // get news list handler
 pub async fn news_list(State(state): State<AppState>) -> Result<Json<Vec<News>>, StatusCode> {
-
     let pool = state.get_pool();
     match get_news(pool).await {
         Ok(news) => Ok(Json(news)),

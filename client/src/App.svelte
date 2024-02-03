@@ -16,6 +16,7 @@
         {#each news as item}
             <div>
                 <p>{item.title}</p>
+                <a href="{item.link}" target="_blank">{item.source}</a>
                 <small>{new Date(item.pub_date).toUTCString()}</small>
             </div>
         {/each}
