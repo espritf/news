@@ -25,7 +25,8 @@ async fn main() -> Result<()> {
         .allow_origin(Any);
 
     let app = Router::new()
-        .route("/", get(news_list))
+        .route("/news", get(news_list))
+        .route("/news/:days_ago", get(news_list))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
         .layer(cors);

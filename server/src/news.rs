@@ -3,13 +3,15 @@ use crate::schema::channels;
 use crate::schema::items;
 use crate::schema::news;
 use anyhow::Result;
+use axum::extract::Path;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use chrono::NaiveDateTime;
 use deadpool_diesel::sqlite::Pool;
 use diesel::deserialize::Queryable;
-use diesel::dsl::{date, now};
+use diesel::dsl::sql;
+use diesel::dsl::date;
 use diesel::RunQueryDsl;
 use diesel::{ExpressionMethods, QueryDsl};
 use serde::Serialize;
@@ -22,14 +24,14 @@ pub struct News {
     source: String,
 }
 
-async fn get_news(pool: &Pool) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+async fn get_news(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
     let conn = pool.get().await?;
     let res = conn
-        .interact(|c| {
+        .interact(move |c| {
             news::table
                 .inner_join(items::table.inner_join(channels::table))
                 .select((news::title, news::pub_date, items::link, channels::title))
-                .filter(date(news::pub_date).eq(date(now)))
+                .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
                 .order(news::pub_date.desc())
                 .load::<News>(c)
         })
@@ -39,9 +41,15 @@ async fn get_news(pool: &Pool) -> Result<Vec<News>, Box<dyn std::error::Error>> 
 }
 
 // get news list handler
-pub async fn news_list(State(state): State<AppState>) -> Result<Json<Vec<News>>, StatusCode> {
+pub async fn news_list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {
+
+    let days_ago: u8 = match days_ago {
+        Some(Path(s)) => s,
+        None => 0,
+    };
+
     let pool = state.get_pool();
-    match get_news(pool).await {
+    match get_news(pool, days_ago).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error ocurred: {}", e);
