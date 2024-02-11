@@ -28,12 +28,17 @@
             {:then news}
                 {#each news as item}
                     <div>
-                        <p>{item.title}</p>
-                        <a href="{item.link}" target="_blank">{item.source}</a>
-                        <small>{new Date(item.pub_date).toUTCString()}</small>
+                        <p>
+                            {item.title}
+                            <br/>
+                            <small>
+                                <a href="{item.link}" target="_blank">{item.source}</a>
+                                {new Date(item.pub_date).toUTCString()}
+                            </small>
+                        </p>
                     </div>
                 {:else}
-                    <div>No news for {day.name}</div>
+                    <div class="msg">No news for {day.name}</div>
                 {/each}
             {/await}
         </div>
