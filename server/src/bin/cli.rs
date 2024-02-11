@@ -7,7 +7,7 @@ use std::env;
 use std::fs;
 
 use news::collector;
-use news::translator;
+use news::publisher;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
         },
         Commands::Publish => {
             tracing::info!("Start publish task");
-            let _ = translator::publish(conn)?;
+            let _ = publisher::publish(conn)?;
         }
     }
 
