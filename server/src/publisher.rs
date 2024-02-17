@@ -29,7 +29,7 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
             tracing::info!("Skip translation for {}", title);
             title
         } else {
-            translator::translate(&title)?
+            translator::translate(&lang, "en", &title)?
         };
 
         let news = News {
