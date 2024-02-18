@@ -3,8 +3,13 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 pub fn translate(source_lang: &str, target_lang: &str, text: &str) -> Result<String> {
+    let api_key = std::env::var("GOOGLE_TRANSLATE_API_KEY")?;
+    if api_key.is_empty() {
+        return Err(anyhow::anyhow!("GOOGLE_TRANSLATE_API_KEY is not set"));
+    }
+
     let translator = google::Translator::new(
-        std::env::var("GOOGLE_TRANSLATE_API_KEY")?,
+        api_key,
         source_lang.to_owned(),
         target_lang.to_owned(),
     );
@@ -72,8 +77,13 @@ mod google {
                 .post(url)
                 .json(&req)
                 .query(&[("key", self.api_key.clone())])
-                .send()?
-                .json::<Response>()?;
+                .send()?;
+
+            if res.status().is_server_error() {
+                return Err(anyhow::anyhow!("Failed to translate. Server responded with {}", res.status()));
+            }
+
+            let res = res.json::<Response>()?;
 
             Ok(res.data.translations[0].translated_text.clone())
         }

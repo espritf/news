@@ -1,7 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
-use dotenvy::dotenv;
 use serde::Deserialize;
 use std::env;
 use std::fs;
@@ -30,7 +29,7 @@ struct Config {
 }
 
 fn main() -> Result<()> {
-    dotenv().ok();
+    dotenv_flow::dotenv_flow().ok();
 
     let subscriber = tracing_subscriber::fmt()
         .compact()

@@ -1,5 +1,4 @@
 use std::env;
-use dotenvy::dotenv;
 use anyhow::Result;
 use axum::{
     routing::get,
@@ -12,7 +11,7 @@ use news::app::AppState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv().ok();
+    dotenv_flow::dotenv_flow().ok();
 
     tracing_subscriber::fmt::init();
 
