@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Dosis:wght@200..800&display=swap');
 
+$fa-font-path: "../node_modules/@fortawesome/fontawesome-free/webfonts/";
+@import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome";
+@import "../node_modules/@fortawesome/fontawesome-free/scss/solid";
+
 :root {
   font-family: "Dosis", Arial, sans-serif;
   font-weight: 400;
@@ -25,3 +29,14 @@
 body { padding: 0 5%; }
 h1, h2 { text-align: center; }
 .msg { text-align: center; }
+
+button {
+  border: none;
+}
+
+button.round {
+  border-radius: 50%;
+  min-width: 2em;
+  padding: 0.5em;
+  margin: 0.5em;
+}

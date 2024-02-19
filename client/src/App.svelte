@@ -1,4 +1,6 @@
 <script>
+    import Player from "./Player.svelte";
+
     let base = import.meta.env.VITE_API_URL;
 
     async function getUsers(day = 0) {
@@ -29,7 +31,10 @@
                 {#each news as item}
                     <div>
                         <p>
-                            {item.title}
+                            <Player text="{item.title}"/>
+                            <span>
+                                {item.title}
+                            </span>
                             <br/>
                             <small>
                                 <a href="{item.link}" target="_blank">{item.source}</a>
