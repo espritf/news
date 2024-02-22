@@ -16,14 +16,14 @@ create table items
     link        text not null,
     tags        text_json,
     pub_date    timestamp not null ,
+    published_id    integer,
     foreign key (channel_id) references channels (id) on delete cascade
 );
 
 create table news
 (
     id          integer primary key not null ,
-    source_id   integer not null ,
+    sources     text_json not null ,
     title       text not null,
-    pub_date    timestamp not null ,
-    foreign key (source_id) references items (id) on delete cascade
+    pub_date    timestamp not null
 );

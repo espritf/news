@@ -1,6 +1,4 @@
 use crate::app::AppState;
-use crate::schema::channels;
-use crate::schema::items;
 use crate::schema::news;
 use anyhow::Result;
 use axum::extract::Path;
@@ -9,30 +7,46 @@ use axum::http::StatusCode;
 use axum::Json;
 use chrono::NaiveDateTime;
 use deadpool_diesel::sqlite::Pool;
-use diesel::deserialize::Queryable;
-use diesel::dsl::sql;
-use diesel::dsl::date;
-use diesel::RunQueryDsl;
-use diesel::{ExpressionMethods, QueryDsl};
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::backend::Backend;
 use serde::Serialize;
+use diesel::prelude::*;
+use diesel::sql_types::Text;
 
-#[derive(Serialize, Queryable, PartialEq, Debug)]
+#[derive(Serialize, Debug, PartialEq, FromSqlRow)]
+#[diesel(sql_type = Text)]
+pub struct Sources(Vec<String>);
+
+impl<DB> FromSql<Text, DB> for Sources
+where
+    DB: Backend,
+    String: FromSql<Text, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = String::from_sql(bytes)?;
+        Ok(Self(serde_json::from_str(&s)?))
+    }
+}
+
+#[derive(Serialize, Queryable, Selectable, Debug, PartialEq)]
+#[diesel(table_name = news)]
 pub struct News {
     title: String,
     pub_date: NaiveDateTime,
-    link: String,
-    source: String,
+    sources: Sources,
 }
 
 async fn get_news(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+
+    use crate::schema::news::dsl::*;
+    use diesel::dsl::{sql, date};
+
     let conn = pool.get().await?;
     let res = conn
         .interact(move |c| {
-            news::table
-                .inner_join(items::table.inner_join(channels::table))
-                .select((news::title, news::pub_date, items::link, channels::title))
-                .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
-                .order(news::pub_date.desc())
+            news.select(News::as_select())
+                .filter(date(pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
+                .order(pub_date.desc())
                 .load::<News>(c)
         })
         .await??;

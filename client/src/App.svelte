@@ -37,6 +37,9 @@
                             </span>
                             <br/>
                             <small>
+                                {#each item.sources as source}
+                                    <a href="{source}" target="_blank">{new URL(source).host.split('.')[1]}</a>
+                                {/each}
                                 <a href="{item.link}" target="_blank">{item.source}</a>
                                 {new Date(item.pub_date).toUTCString()}
                             </small>
