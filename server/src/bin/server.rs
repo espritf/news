@@ -6,7 +6,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use news::news::news_list;
+use news::news::{news_list, publish_news};
 use news::app::AppState;
 
 #[tokio::main]
@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
         .allow_origin(Any);
 
     let app = Router::new()
-        .route("/news", get(news_list))
+        .route("/news", get(news_list).post(publish_news))
         .route("/news/:days_ago", get(news_list))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
