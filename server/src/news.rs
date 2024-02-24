@@ -63,15 +63,14 @@ pub struct NewsInput {
 
 async fn get_news(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
 
-    use crate::schema::news::dsl::*;
     use diesel::dsl::{sql, date};
 
     let conn = pool.get().await?;
     let res = conn
         .interact(move |c| {
-            news.select(News::as_select())
-                .filter(date(pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
-                .order(pub_date.desc())
+            news::table.select(News::as_select())
+                .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
+                .order(news::pub_date.desc())
                 .load::<News>(c)
         })
         .await??;
@@ -81,12 +80,10 @@ async fn get_news(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::e
 
 async fn create_news(pool: &Pool, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
 
-    use crate::schema::news::dsl::*;
-
     let conn = pool.get().await?;
     let res = conn
         .interact(move |c| {
-            diesel::insert_into(news)
+            diesel::insert_into(news::table)
                 .values(&input)
                 .returning(News::as_returning())
                 .get_result(c)
