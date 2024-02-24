@@ -61,37 +61,43 @@ pub struct NewsInput {
     sources: Sources,
 }
 
-async fn get_news(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+mod repository {
+    use super::*;
 
-    use diesel::dsl::{sql, date};
+    pub(super) async fn list(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
 
-    let conn = pool.get().await?;
-    let res = conn
-        .interact(move |c| {
-            news::table.select(News::as_select())
-                .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
-                .order(news::pub_date.desc())
-                .load::<News>(c)
-        })
-        .await??;
+        use diesel::dsl::{sql, date};
 
-    Ok(res)
+        let conn = pool.get().await?;
+        let res = conn
+            .interact(move |c| {
+                news::table.select(News::as_select())
+                    .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
+                    .order(news::pub_date.desc())
+                    .load::<News>(c)
+            })
+            .await??;
+
+        Ok(res)
+    }
+
+    pub(super) async fn create(pool: &Pool, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
+
+        let conn = pool.get().await?;
+        let res = conn
+            .interact(move |c| {
+                diesel::insert_into(news::table)
+                    .values(&input)
+                    .returning(News::as_returning())
+                    .get_result(c)
+            })
+            .await??;
+
+        Ok(res)
+    }
+    
 }
 
-async fn create_news(pool: &Pool, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
-
-    let conn = pool.get().await?;
-    let res = conn
-        .interact(move |c| {
-            diesel::insert_into(news::table)
-                .values(&input)
-                .returning(News::as_returning())
-                .get_result(c)
-        })
-        .await??;
-
-    Ok(res)
-}
 
 // get news list handler
 pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {
@@ -102,7 +108,7 @@ pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> 
     };
 
     let pool = state.get_pool();
-    match get_news(pool, days_ago).await {
+    match repository::list(pool, days_ago).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error ocurred: {}", e);
@@ -113,7 +119,7 @@ pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> 
 
 pub async fn publish(State(state): State<AppState>, Json(input): Json<NewsInput>) -> Result<Json<News>, StatusCode> {
     let pool = state.get_pool();
-    match create_news(pool, input).await {
+    match repository::create(pool, input).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error ocurred: {}", e);
