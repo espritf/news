@@ -55,7 +55,7 @@ impl TextExtractor {
 }
 
 impl LinkExtractor {
-    fn extract<'a>(&self, el: ElementRef<'a>, base: &str) -> String {
+    fn extract(&self, el: ElementRef, base: &str) -> String {
         let el = el.select(&S::parse(&self.sel).unwrap()).next().unwrap();
         let href = el.attr("href").unwrap();
         
@@ -70,7 +70,7 @@ impl LinkExtractor {
 }
 
 impl DateExtractor {
-    fn extract<'a>(&self, el: ElementRef<'a>) -> NaiveDateTime {
+    fn extract(&self, el: ElementRef) -> NaiveDateTime {
         let el = el.select(&S::parse(&self.sel).unwrap()).next().unwrap();
         let text = el.text().next().unwrap().trim();
 

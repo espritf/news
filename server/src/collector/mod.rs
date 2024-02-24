@@ -22,7 +22,7 @@ struct ItemOfChannel {
     item: Item,
 }
 
-fn persist<'a>(conn: &mut SqliteConnection, data: Data) -> Result<()> {
+fn persist(conn: &mut SqliteConnection, data: Data) -> Result<()> {
     let id = diesel::insert_into(channels::table)
         .values(&data.channel)
         .on_conflict(channels::link)
