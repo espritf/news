@@ -97,7 +97,7 @@ async fn create_news(pool: &Pool, input: NewsInput) -> Result<News, Box<dyn std:
 }
 
 // get news list handler
-pub async fn news_list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {
+pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {
 
     let days_ago: u8 = match days_ago {
         Some(Path(s)) => s,
@@ -114,7 +114,7 @@ pub async fn news_list(State(state): State<AppState>, days_ago: Option<Path<u8>>
     }
 }
 
-pub async fn publish_news(State(state): State<AppState>, Json(input): Json<NewsInput>) -> Result<Json<News>, StatusCode> {
+pub async fn publish(State(state): State<AppState>, Json(input): Json<NewsInput>) -> Result<Json<News>, StatusCode> {
     let pool = state.get_pool();
     match create_news(pool, input).await {
         Ok(news) => Ok(Json(news)),
