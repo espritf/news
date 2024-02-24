@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "lowercase")]
+#[allow(clippy::large_enum_variant)]
 pub enum Config {
     Rss(rss::Config),
     Html(html::Config),
