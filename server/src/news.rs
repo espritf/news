@@ -119,7 +119,7 @@ pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> 
     match repository::list(pool, days_ago).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
-            tracing::error!("Error ocurred: {}", e);
+            tracing::error!("Error occurred: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -130,7 +130,7 @@ pub async fn publish(State(state): State<AppState>, Json(input): Json<NewsInput>
     match repository::create(pool, input).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
-            tracing::error!("Error ocurred: {}", e);
+            tracing::error!("Error occurred: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

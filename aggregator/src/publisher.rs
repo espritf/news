@@ -44,7 +44,6 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
             pub_date,
         };
         
-        // get nedpoint from env variable
         let endpoint = std::env::var("NEWS_API_ENDPOINT")?;
         let response = reqwest::blocking::Client::new()
             .post(endpoint)
@@ -53,12 +52,11 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
         
         let json = response.json::<Value>()?;
         
-        // get id from json
         let published_id = json
             .get("id").ok_or(anyhow::anyhow!("No id in response"))?
             .as_u64().ok_or(anyhow::anyhow!("Id is not a number"))?;
         
-        tracing::info!("Item {} publishded with id: {}", &publication.title, &published_id);
+        tracing::info!("Item {} published with id: {}", &publication.title, &published_id);
 
         diesel::update(items::table.filter(items::id.eq(id)))
             .set(items::published_id.eq(published_id as i32)) // Why i32?
