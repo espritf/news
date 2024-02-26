@@ -1,3 +1,7 @@
+pub mod schema;
+pub mod news;
+pub mod app;
+
 use std::env;
 use anyhow::Result;
 use axum::{
@@ -6,8 +10,8 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use news::news::{list, publish};
-use news::app::AppState;
+use news::{list, publish};
+use app::AppState;
 
 #[tokio::main]
 async fn main() -> Result<()> {

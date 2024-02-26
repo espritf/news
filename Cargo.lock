@@ -18,6 +18,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
+name = "aggregator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "deadpool",
+ "deadpool-diesel",
+ "diesel",
+ "dotenv-flow",
+ "dotenvy",
+ "reqwest",
+ "rss",
+ "scraper",
+ "serde",
+ "serde_json",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "ahash"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1233,7 +1256,6 @@ dependencies = [
  "anyhow",
  "axum",
  "chrono",
- "clap",
  "deadpool",
  "deadpool-diesel",
  "diesel",
@@ -1241,16 +1263,12 @@ dependencies = [
  "dotenvy",
  "regex",
  "reqwest",
- "rss",
- "scraper",
  "serde",
  "serde_json",
  "tokio",
- "toml",
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "url",
 ]
 
 [[package]]

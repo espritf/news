@@ -1,12 +1,15 @@
+pub mod schema;
+pub mod collector;
+pub mod translator;
+pub mod publisher;
+pub mod error;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use serde::Deserialize;
 use std::env;
 use std::fs;
-
-use news::collector;
-use news::publisher;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
