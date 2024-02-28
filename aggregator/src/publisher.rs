@@ -45,10 +45,18 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
         };
         
         let endpoint = std::env::var("NEWS_API_ENDPOINT")?;
+        let token = std::env::var("NEWS_API_TOKEN")?;
+        
         let response = reqwest::blocking::Client::new()
             .post(endpoint)
+            .header("auth", token)
             .json(&publication)
             .send()?;
+        
+        if !response.status().is_success() {
+            let status = response.status();
+            return Err(anyhow::anyhow!("Failed to publish item. Response with status {}", status));
+        }
         
         let json = response.json::<Value>()?;
         

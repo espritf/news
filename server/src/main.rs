@@ -1,12 +1,14 @@
 pub mod schema;
 pub mod news;
 pub mod app;
+pub mod security;
 
 use std::env;
 use anyhow::Result;
 use axum::{
-    routing::get,
+    routing::{get, post},
     Router,
+    middleware,
 };
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -28,7 +30,8 @@ async fn main() -> Result<()> {
         .allow_origin(Any);
 
     let app = Router::new()
-        .route("/news", get(list).post(publish))
+        .route("/news", post(publish)).route_layer(middleware::from_fn(security::auth))
+        .route("/news", get(list))
         .route("/news/:days_ago", get(list))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
