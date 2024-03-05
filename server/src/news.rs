@@ -1,5 +1,5 @@
 
-mod model {
+pub mod model {
     use diesel::prelude::*;
     use crate::schema::news;
     use diesel::AsExpression;
@@ -9,6 +9,8 @@ mod model {
     use diesel::serialize::{IsNull, Output, ToSql};
     use diesel::sql_types::Text;
     use chrono::NaiveDateTime;
+    use deadpool_diesel::sqlite::Pool;
+    use axum::async_trait;
 
     #[derive(Serialize, Deserialize, Debug, PartialEq, FromSqlRow, AsExpression)]
     #[diesel(sql_type = Text)]
@@ -56,47 +58,61 @@ mod model {
         sources: Sources,
     }
     
+    #[async_trait]
+    pub trait NewsRepository {
+        fn new(conn: Pool) -> Self;
+        async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>>;
+        async fn create(&self, input: NewsInput) -> Result<News, Box<dyn std::error::Error>>;
+    }
 }
 
 mod repository {
     use anyhow::Result;
+    use axum::async_trait;
     use diesel::prelude::*;
     use crate::schema::news;
     use deadpool_diesel::sqlite::Pool;
-    use super::model::{News, NewsInput};
-
-    pub(super) async fn list(pool: &Pool, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
-
-        use diesel::dsl::{sql, date};
-
-        let conn = pool.get().await?;
-        let res = conn
-            .interact(move |c| {
-                news::table.select(News::as_select())
-                    .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
-                    .order(news::pub_date.desc())
-                    .load::<News>(c)
-            })
-            .await??;
-
-        Ok(res)
-    }
-
-    pub(super) async fn create(pool: &Pool, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
-
-        let conn = pool.get().await?;
-        let res = conn
-            .interact(move |c| {
-                diesel::insert_into(news::table)
-                    .values(&input)
-                    .returning(News::as_returning())
-                    .get_result(c)
-            })
-            .await??;
-
-        Ok(res)
-    }
+    use super::model::{News, NewsInput, NewsRepository};
     
+    pub(super) struct NewsRepositoryImpl {
+        pool: Pool,
+    }
+
+    #[async_trait]
+    impl NewsRepository for NewsRepositoryImpl {
+        fn new(pool: Pool) -> Self {
+            Self { pool }
+        }
+        async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+            use diesel::dsl::{sql, date};
+
+            let conn = self.pool.get().await?;
+            let res = conn
+                .interact(move |c| {
+                    news::table.select(News::as_select())
+                        .filter(date(news::pub_date).eq(sql(&format!("DATE('now', '-{} days', 'localtime')", days_ago))))
+                        .order(news::pub_date.desc())
+                        .load::<News>(c)
+                })
+                .await??;
+
+            Ok(res)
+        }
+        
+       async fn create(&self, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
+           let conn = self.pool.get().await?;
+           let res = conn
+               .interact(move |c| {
+                   diesel::insert_into(news::table)
+                       .values(&input)
+                       .returning(News::as_returning())
+                       .get_result(c)
+               })
+               .await??;
+
+           Ok(res)
+        }
+    }
 }
 
 use crate::app::AppState;
@@ -106,6 +122,8 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use model::{News, NewsInput};
+use model::{NewsRepository};
+use repository::{NewsRepositoryImpl};
 
 // get news list handler
 pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {
@@ -115,8 +133,8 @@ pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> 
         None => 0,
     };
 
-    let pool = state.get_pool();
-    match repository::list(pool, days_ago).await {
+    let repo = state.get_repo::<NewsRepositoryImpl>();
+    match repo.list(days_ago).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -126,8 +144,8 @@ pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> 
 }
 
 pub async fn publish(State(state): State<AppState>, Json(input): Json<NewsInput>) -> Result<Json<News>, StatusCode> {
-    let pool = state.get_pool();
-    match repository::create(pool, input).await {
+    let repo = state.get_repo::<NewsRepositoryImpl>();
+    match repo.create(input).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
