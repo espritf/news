@@ -122,8 +122,8 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use model::{News, NewsInput};
-use model::{NewsRepository};
-use repository::{NewsRepositoryImpl};
+use model::NewsRepository;
+use repository::NewsRepositoryImpl;
 
 // get news list handler
 pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {

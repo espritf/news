@@ -1,6 +1,6 @@
 use anyhow::Result;
 use deadpool_diesel::sqlite::{Manager, Pool, Runtime};
-use crate::news::model::{NewsRepository};
+use crate::news::model::NewsRepository;
 
 #[derive(Clone)]
 pub struct AppState {
