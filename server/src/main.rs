@@ -1,7 +1,7 @@
 pub mod schema;
-pub mod news;
 pub mod app;
 pub mod security;
+pub mod news;
 
 use std::env;
 use anyhow::Result;
@@ -12,7 +12,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use news::{list, publish};
+use news::handlers::{list, publish};
 use app::AppState;
 
 #[tokio::main]
