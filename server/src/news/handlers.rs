@@ -6,6 +6,17 @@ use axum::http::StatusCode;
 use axum::Json;
 use super::model::{News, NewsInput, NewsRepository};
 use super::repository::NewsRepositoryImpl;
+use axum::routing::{get, post};
+use axum::Router;
+use axum::middleware;
+
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/news", post(publish)).route_layer(middleware::from_fn(super::security::auth))
+        .route("/news", get(list))
+        .route("/news/:days_ago", get(list))
+}
+
 
 // get news list handler
 pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {

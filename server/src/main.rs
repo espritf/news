@@ -4,14 +4,8 @@ pub mod news;
 
 use std::env;
 use anyhow::Result;
-use axum::{
-    routing::{get, post},
-    Router,
-    middleware,
-};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use news::handlers::{list, publish};
 use app::AppState;
 
 #[tokio::main]
@@ -28,10 +22,7 @@ async fn main() -> Result<()> {
     let cors = CorsLayer::new()
         .allow_origin(Any);
 
-    let app = Router::new()
-        .route("/news", post(publish)).route_layer(middleware::from_fn(news::security::auth))
-        .route("/news", get(list))
-        .route("/news/:days_ago", get(list))
+    let app = news::handlers::routes()
         .layer(TraceLayer::new_for_http())
         .with_state(state)
         .layer(cors);
