@@ -1,6 +1,5 @@
 pub mod schema;
 pub mod app;
-pub mod security;
 pub mod news;
 
 use std::env;
@@ -30,7 +29,7 @@ async fn main() -> Result<()> {
         .allow_origin(Any);
 
     let app = Router::new()
-        .route("/news", post(publish)).route_layer(middleware::from_fn(security::auth))
+        .route("/news", post(publish)).route_layer(middleware::from_fn(news::security::auth))
         .route("/news", get(list))
         .route("/news/:days_ago", get(list))
         .layer(TraceLayer::new_for_http())
