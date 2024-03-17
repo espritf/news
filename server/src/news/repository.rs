@@ -1,19 +1,24 @@
-use super::model::{News, NewsInput, NewsRepository};
+use super::model::{News, NewsInput};
 use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
 use deadpool_diesel::sqlite::Pool;
 use diesel::prelude::*;
+use crate::app::Repository;
+use super::handlers::NewsRepository;
 
 pub(super) struct NewsRepositoryImpl {
     pool: Pool,
 }
 
-#[async_trait]
-impl NewsRepository for NewsRepositoryImpl {
+impl Repository for NewsRepositoryImpl {
     fn new(pool: Pool) -> Self {
         Self { pool }
     }
+}
+
+#[async_trait]
+impl NewsRepository for NewsRepositoryImpl {
     async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
         use diesel::dsl::{date, sql};
 

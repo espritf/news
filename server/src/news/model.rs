@@ -1,7 +1,5 @@
 use crate::schema::news;
-use axum::async_trait;
 use chrono::NaiveDateTime;
-use deadpool_diesel::sqlite::Pool;
 use diesel::backend::Backend;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::prelude::*;
@@ -57,11 +55,4 @@ pub struct NewsInput {
     title: String,
     pub_date: NaiveDateTime,
     sources: Sources,
-}
-
-#[async_trait]
-pub trait NewsRepository {
-    fn new(conn: Pool) -> Self;
-    async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>>;
-    async fn create(&self, input: NewsInput) -> Result<News, Box<dyn std::error::Error>>;
 }

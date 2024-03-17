@@ -4,11 +4,12 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
-use super::model::{News, NewsInput, NewsRepository};
+use super::model::{News, NewsInput};
 use super::repository::NewsRepositoryImpl;
 use axum::routing::{get, post};
 use axum::Router;
 use axum::middleware;
+use axum::async_trait;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -17,6 +18,11 @@ pub fn routes() -> Router<AppState> {
         .route("/news/:days_ago", get(list))
 }
 
+#[async_trait]
+pub trait NewsRepository {
+    async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>>;
+    async fn create(&self, input: NewsInput) -> Result<News, Box<dyn std::error::Error>>;
+}
 
 // get news list handler
 pub async fn list(State(state): State<AppState>, days_ago: Option<Path<u8>>) -> Result<Json<Vec<News>>, StatusCode> {

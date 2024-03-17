@@ -1,6 +1,9 @@
 use anyhow::Result;
 use deadpool_diesel::sqlite::{Manager, Pool, Runtime};
-use crate::news::model::NewsRepository;
+
+pub trait Repository {
+    fn new(pool: Pool) -> Self;
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -15,7 +18,7 @@ impl AppState {
         Ok(AppState { pool })
     }
 
-    pub fn get_repo<T: NewsRepository>(&self) -> T {
+    pub fn get_repo<T: Repository>(&self) -> T {
         T::new(self.pool.clone())
     }
 }
