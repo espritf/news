@@ -48,6 +48,17 @@ pub struct News {
     sources: Sources,
 }
 
+impl News {
+    pub fn new(id: i32, title: String, pub_date: NaiveDateTime, sources: Vec<String>) -> Self {
+        Self {
+            id,
+            title,
+            pub_date,
+            sources: Sources(sources),
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, PartialEq, Insertable)]
 #[diesel(table_name = news)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]

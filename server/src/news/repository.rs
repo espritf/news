@@ -4,15 +4,14 @@ use anyhow::Result;
 use axum::async_trait;
 use deadpool_diesel::sqlite::Pool;
 use diesel::prelude::*;
-use crate::app::Repository;
 use super::handlers::NewsRepository;
 
-pub(super) struct NewsRepositoryImpl {
+pub struct NewsRepositoryImpl {
     pool: Pool,
 }
 
-impl Repository for NewsRepositoryImpl {
-    fn new(pool: Pool) -> Self {
+impl NewsRepositoryImpl {
+    pub fn new(pool: Pool) -> Self {
         Self { pool }
     }
 }

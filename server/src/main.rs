@@ -6,7 +6,9 @@ use std::env;
 use anyhow::Result;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use app::AppState;
+use app::{AppState, pool};
+use crate::news::repository::NewsRepositoryImpl;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,7 +19,9 @@ async fn main() -> Result<()> {
     let uri = &env::var("DATABASE_URL")?;
     let address = &env::var("SERVER_ADDR")?;
 
-    let state = AppState::build(uri)?;
+    let pool = pool(uri)?;
+    let repo = Arc::new(NewsRepositoryImpl::new(pool));
+    let state = AppState { repo };
 
     let cors = CorsLayer::new()
         .allow_origin(Any);
