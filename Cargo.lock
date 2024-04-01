@@ -1300,6 +1300,7 @@ dependencies = [
  "diesel",
  "dotenv-flow",
  "dotenvy",
+ "mime",
  "mockall",
  "regex",
  "reqwest",

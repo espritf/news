@@ -1,15 +1,7 @@
 use anyhow::Result;
 use axum::{
-    http::{StatusCode, HeaderMap},
-    extract::Request,
-    middleware::Next,
-    response::Response
+    extract::{Request, State}, http::{HeaderMap, StatusCode}, middleware::Next, response::Response
 };
-
-fn token_is_valid(token: &str) -> bool {
-    let valid_token = std::env::var("NEWS_API_TOKEN").unwrap();
-    token == valid_token
-}
 
 fn get_token(headers: &HeaderMap) -> Result<&str> {
     let token = headers.get("auth")
@@ -18,9 +10,9 @@ fn get_token(headers: &HeaderMap) -> Result<&str> {
     Ok(token)
 }
 
-pub async fn auth(headers: HeaderMap, request: Request, next: Next) -> Result<Response, StatusCode> {
+pub async fn auth(State(token): State<String>, headers: HeaderMap, request: Request, next: Next) -> Result<Response, StatusCode> {
     match get_token(&headers) {
-        Ok(token) if token_is_valid(token) => {
+        Ok(t) if token == t => {
             let response = next.run(request).await;
             Ok(response)
         },

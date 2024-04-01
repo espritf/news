@@ -21,12 +21,13 @@ async fn main() -> Result<()> {
 
     let pool = pool(uri)?;
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
+    let token = env::var("NEWS_API_TOKEN")?;
     let state = AppState { repo };
 
     let cors = CorsLayer::new()
         .allow_origin(Any);
 
-    let app = news::handlers::routes()
+    let app = news::handlers::routes(&token)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
         .layer(cors);
