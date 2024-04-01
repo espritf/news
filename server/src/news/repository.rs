@@ -1,10 +1,10 @@
+use super::handlers::NewsRepository;
 use super::model::{News, NewsInput};
 use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
 use deadpool_diesel::sqlite::Pool;
 use diesel::prelude::*;
-use super::handlers::NewsRepository;
 
 pub struct NewsRepositoryImpl {
     pool: Pool,

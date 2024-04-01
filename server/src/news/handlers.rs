@@ -33,7 +33,6 @@ pub async fn list(
     State(state): State<AppState>,
     days_ago: Option<Path<u8>>,
 ) -> Result<Json<Vec<News>>, StatusCode> {
-
     tracing::info!("Listing news");
 
     let days_ago: u8 = match days_ago {
@@ -54,7 +53,6 @@ pub async fn publish(
     State(state): State<AppState>,
     Json(input): Json<NewsInput>,
 ) -> Result<Json<News>, StatusCode> {
-
     tracing::info!("Publishing news");
 
     match state.repo.create(input).await {
@@ -70,7 +68,7 @@ pub async fn publish(
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::{Method, Request, header};
+    use axum::http::{header, Method, Request};
     use chrono::NaiveDateTime;
     use serde_json::json;
     use std::str::FromStr;

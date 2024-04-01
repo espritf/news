@@ -1,14 +1,14 @@
-pub mod schema;
 pub mod app;
 pub mod news;
+pub mod schema;
 
-use std::env;
+use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
+use app::{pool, AppState};
+use std::env;
+use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use app::{AppState, pool};
-use crate::news::repository::NewsRepositoryImpl;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,8 +24,7 @@ async fn main() -> Result<()> {
     let token = env::var("NEWS_API_TOKEN")?;
     let state = AppState { repo };
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any);
+    let cors = CorsLayer::new().allow_origin(Any);
 
     let app = news::handlers::routes(&token)
         .layer(TraceLayer::new_for_http())
