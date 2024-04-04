@@ -13,10 +13,10 @@ use axum::Router;
 #[cfg(test)]
 use mockall::automock;
 
-pub fn routes(token: &String) -> Router<AppState> {
+pub fn routes(token: &str) -> Router<AppState> {
     Router::new()
         .route("/news", post(publish))
-        .route_layer(middleware::from_fn_with_state(token.clone(), auth))
+        .route_layer(middleware::from_fn_with_state(token.to_owned(), auth))
         .route("/news", get(list))
         .route("/news/:days_ago", get(list))
 }
