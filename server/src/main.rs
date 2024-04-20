@@ -1,10 +1,12 @@
 pub mod app;
 pub mod news;
 pub mod schema;
+pub mod pool;
 
 use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
-use app::{AppState, Pool};
+use app::AppState;
+use pool::Pool;
 use std::env;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};

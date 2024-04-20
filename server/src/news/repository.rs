@@ -4,7 +4,7 @@ use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
 use diesel::prelude::*;
-use crate::app::Pool;
+use crate::pool::Pool;
 
 pub struct NewsRepositoryImpl {
     pool: Pool,
