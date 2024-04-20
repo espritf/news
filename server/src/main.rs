@@ -4,7 +4,7 @@ pub mod schema;
 
 use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
-use app::{pool, AppState};
+use app::{AppState, Pool};
 use std::env;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     let uri = &env::var("DATABASE_URL")?;
     let address = &env::var("SERVER_ADDR")?;
 
-    let pool = pool(uri)?;
+    let pool = Pool::new(uri)?;
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
     let token = env::var("NEWS_API_TOKEN")?;
     let state = AppState { repo };
