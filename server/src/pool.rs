@@ -1,6 +1,5 @@
 use anyhow::{Result, Error};
-use deadpool_diesel::sqlite::{Manager, Pool as DeadPool, Runtime};
-use deadpool::managed::Object;
+use deadpool_diesel::postgres::{Manager, Object, Pool as DeadPool, Runtime};
 
 pub struct Pool {
     pub pool: DeadPool,
@@ -13,7 +12,8 @@ impl Pool {
         Ok(Self { pool })
     }
 
-    pub async fn get(&self) -> Result<Object<Manager>> {
-        self.pool.get().await.map_err(Error::msg)
+    pub async fn get(&self) -> Result<Object> {
+        let p = self.pool.get();
+        p.await.map_err(Error::msg)
     }
 }

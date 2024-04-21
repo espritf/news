@@ -2,12 +2,13 @@ use crate::schema::news;
 use chrono::NaiveDateTime;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::prelude::*;
-use diesel::serialize::{IsNull, Output, ToSql};
+use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::AsExpression;
 use serde::{Deserialize, Serialize};
 
-type Backend = diesel::sqlite::Sqlite;
+type Backend = diesel::pg::Pg;
+//use diesel::backend::Backend;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, FromSqlRow, AsExpression)]
 #[diesel(sql_type = Text)]
@@ -34,8 +35,8 @@ where
         out: &mut Output<'b, '_, Backend>,
     ) -> diesel::serialize::Result {
         let s = serde_json::to_string(&self.0)?;
-        out.set_value(s);
-        Ok(IsNull::No)
+        //s.to_sql(out)
+        <String as ToSql<Text, Backend>>::to_sql(&s, &mut out.reborrow())
     }
 }
 

@@ -2,7 +2,7 @@
 
 diesel::table! {
     news (id) {
-        id -> Integer,
+        id -> Int4,
         sources -> Text,
         title -> Text,
         pub_date -> Timestamp,

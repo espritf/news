@@ -10,8 +10,8 @@ anyhow = "1.0.75"
 axum = "0.7.4"
 chrono = { version = "0.4.31", features = ["serde"] }
 deadpool = { version = "0.10.0", features = ["rt_tokio_1"] }
-deadpool-diesel = { version = "0.5.0", features = ["sqlite"] }
-diesel = { version = "2.1.4", features = ["sqlite", "returning_clauses_for_sqlite_3_35", "chrono", "serde_json"] }
+deadpool-diesel = { version = "0.6.0", features = ["postgres"] }
+diesel = { version = "2.1.4", features = ["chrono", "serde_json", "postgres"] }
 dotenv-flow = "0.16.2"
 dotenvy = "0.15.7"
 mime = "0.3.17"

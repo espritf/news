@@ -27,7 +27,7 @@ impl NewsRepository for NewsRepositoryImpl {
                 news::table
                     .select(News::as_select())
                     .filter(date(news::pub_date).eq(sql(&format!(
-                        "DATE('now', '-{} days', 'localtime')",
+                        "date(now() - interval '{} days')",
                         days_ago
                     ))))
                     .order(news::pub_date.desc())
