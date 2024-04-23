@@ -1,19 +1,20 @@
 use anyhow::{Result, Error};
-use deadpool_diesel::postgres::{Manager, Object, Pool as DeadPool, Runtime};
+use diesel_async::AsyncPgConnection;
+use diesel_async::pooled_connection::deadpool::{Object, Pool as BasePool};
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 
 pub struct Pool {
-    pub pool: DeadPool,
+    pub pool: BasePool<AsyncPgConnection>,
 }
 
 impl Pool {
     pub fn new(uri: &String) -> Result<Self> {
-        let manager = Manager::new(uri, Runtime::Tokio1);
-        let pool = DeadPool::builder(manager).build()?;
+        let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(uri);
+        let pool: BasePool<AsyncPgConnection>  = BasePool::builder(manager).build()?;
         Ok(Self { pool })
     }
-
-    pub async fn get(&self) -> Result<Object> {
-        let p = self.pool.get();
-        p.await.map_err(Error::msg)
+    
+    pub async fn get(&self) -> Result<Object<AsyncPgConnection>> {
+        self.pool.get().await.map_err(Error::msg)
     }
 }
