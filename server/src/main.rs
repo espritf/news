@@ -2,6 +2,7 @@ pub mod app;
 pub mod news;
 pub mod schema;
 pub mod pool;
+pub mod transfomer;
 
 use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
@@ -11,6 +12,7 @@ use std::env;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+use transfomer::Model;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,10 +25,17 @@ async fn main() -> Result<()> {
 
     let pool = Pool::new(uri)?;
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
-    let token = env::var("NEWS_API_TOKEN")?;
-    let state = AppState { repo };
+
+    let config = env::var("MODEL_CONFIG").unwrap_or("MODEL_CONFIG not set".to_string());
+    let tokenizer = env::var("MODELTOKENIZER").unwrap_or("MODELTOKENIZER not set".to_string());
+    let weights = env::var("MODEL_WEIGHTS").unwrap_or("MODEL_WEIGHTS not set".to_string());
+    let model = Arc::new(Model::build(&config, &tokenizer, &weights)?);
+
+    let state = AppState { repo, model };
 
     let cors = CorsLayer::new().allow_origin(Any);
+
+    let token = env::var("NEWS_API_TOKEN")?;
 
     let app = news::handlers::routes(&token)
         .layer(TraceLayer::new_for_http())

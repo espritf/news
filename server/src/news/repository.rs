@@ -1,5 +1,5 @@
 use super::handlers::NewsRepository;
-use super::model::{News, NewsInput};
+use super::model::{News, NewsData};
 use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
@@ -36,7 +36,7 @@ impl NewsRepository for NewsRepositoryImpl {
         Ok(res)
     }
 
-    async fn create(&self, input: NewsInput) -> Result<News, Box<dyn std::error::Error>> {
+    async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>> {
         let mut conn = self.pool.get().await?;
 
         let res = diesel::insert_into(news::table)
