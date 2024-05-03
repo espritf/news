@@ -4,6 +4,7 @@ use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
 use pgvector::Vector;
 use tokenizers::tokenizer::Tokenizer;
+use crate::app::VectorProvider;
 
 pub struct Model {
     model: BertModel,
@@ -40,7 +41,10 @@ impl Model {
 
         Ok(ys)
     }
-    pub fn vector(&self, input: &str) -> Result<Vector> {
+}
+
+impl VectorProvider for Model {
+    fn vector(&self, input: &str) -> Result<Vector> {
         let embeddings = self.forward(input)?;
         let (_, n_tokens, _) = embeddings.dims3().unwrap();
         let embeddings = (embeddings.sum(1).unwrap() / (n_tokens as f64)).unwrap();

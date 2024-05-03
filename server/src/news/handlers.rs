@@ -2,7 +2,6 @@ use super::model::{News, NewsInput, NewsData, QueryParams};
 use crate::app::AppState;
 use crate::news::security::auth;
 use anyhow::Result;
-use axum::async_trait;
 use axum::extract::State;
 use axum::extract::Query;
 use axum::http::StatusCode;
@@ -10,21 +9,12 @@ use axum::middleware;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
-#[cfg(test)]
-use mockall::automock;
 
 pub fn routes(token: &str) -> Router<AppState> {
     Router::new()
         .route("/news", post(publish))
         .route_layer(middleware::from_fn_with_state(token.to_owned(), auth))
         .route("/news", get(list))
-}
-
-#[cfg_attr(test, automock)]
-#[async_trait]
-pub trait NewsRepository: Send + Sync {
-    async fn list(&self, params: QueryParams) -> Result<Vec<News>, Box<dyn std::error::Error>>;
-    async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>>;
 }
 
 // get news list handler
@@ -70,6 +60,8 @@ pub async fn publish(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::MockNewsRepository;
+    use crate::app::MockVectorProvider;
     use axum::body::Body;
     use axum::http::{header, Method, Request};
     use chrono::NaiveDateTime;
@@ -83,8 +75,12 @@ mod tests {
         let mut repo = MockNewsRepository::new();
         repo.expect_create().never();
 
+        let mut vp = MockVectorProvider::new();
+        vp.expect_vector().never();
+
         let repo = Arc::new(repo);
-        let state = AppState { repo };
+        let model = Arc::new(vp);
+        let state = AppState { repo, model };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);
@@ -111,8 +107,14 @@ mod tests {
             ))
         });
 
+        let mut vp = MockVectorProvider::new();
+        vp.expect_vector().return_once(|_| {
+            Ok(pgvector::Vector::from(vec![1.0, 2.0, 3.0]))
+        });
+
         let repo = Arc::new(repo);
-        let state = AppState { repo };
+        let model = Arc::new(vp);
+        let state = AppState { repo, model };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);

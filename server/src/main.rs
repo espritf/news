@@ -1,8 +1,8 @@
 pub mod app;
-pub mod news;
 pub mod schema;
 pub mod pool;
 pub mod transfomer;
+pub mod news;
 
 use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;

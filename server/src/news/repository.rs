@@ -1,4 +1,4 @@
-use super::handlers::NewsRepository;
+use crate::app::NewsRepository;
 use super::model::{News, NewsData, QueryParams};
 use crate::pool::Pool;
 use crate::schema::news;
