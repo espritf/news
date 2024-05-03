@@ -3,32 +3,57 @@
 
     let base = import.meta.env.VITE_API_URL;
 
-    async function getUsers(day = 0) {
-        const url = base + 'news' + (day ? '/' + day : '');
-        console.log(url);
+    function groupByDay(items) {
+        const days = {};
+        items.forEach(item => {
+            const date = new Date(item.pub_date);
+            const day = date.toDateString();
+            if (!days[day]) {
+                days[day] = [];
+            }
+            days[day].push(item);
+        });
+        return Object.entries(days).map(([name, items]) => ({name, items}));
+    }
+
+    async function getItems(query) {
+        const url = base + 'news' + (query ? `?search=${query}` : '');
 
         const res  = await fetch(url);
         const data = await res.json();
-        return data;
+
+        const grouped = groupByDay(data);
+
+        return grouped;
     }
 
-    const days = [
-        {ago: 0, name: "today"},
-        {ago: 1, name: "yesterday"},
-    ];
+    let query;
+
+    const search = (e) => query = e.target.query.value;
+
+    $: data = getItems(query);
+
 </script>
 
 <main>
     <h1>news</h1>
 
-    {#each days as day}
-    <div>
-        <h2>{day.name}</h2>
+    <!--<div id="search">-->
+        <!--<form on:submit|preventDefault={search}>-->
+            <!--<input type="text" name="query"/>-->
+            <!--<button type="submit">Search</button>-->
+        <!--</form>-->
+    <!--</div>-->
+
+    {#await data}
+        <p>Loading...</p>
+    {:then data }
+
+        {#each data as day }
         <div>
-            {#await getUsers(day.ago)}
-                <p>Loading...</p>
-            {:then news}
-                {#each news as item}
+            <h2>{day.name}</h2>
+            <div>
+                {#each day.items as item}
                     <div>
                         <p>
                             <Player text="{item.title}"/>
@@ -48,9 +73,10 @@
                 {:else}
                     <div class="msg">No news for {day.name}</div>
                 {/each}
-            {/await}
+            </div>
         </div>
-    </div>
-    {/each}
+        {/each}
+
+    {/await}
 
 </main>

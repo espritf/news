@@ -61,3 +61,19 @@ impl NewsData {
         }
     }
 }
+
+#[derive(Deserialize)]
+pub struct QueryParams {
+    pub limit: u8,
+    pub search: Option<String>,
+}
+
+impl Default for QueryParams {
+    fn default() -> Self {
+        Self {
+            limit: 100,
+            search: None,
+        }
+    }
+}
+

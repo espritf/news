@@ -1,10 +1,10 @@
-use super::model::{News, NewsInput, NewsData};
+use super::model::{News, NewsInput, NewsData, QueryParams};
 use crate::app::AppState;
 use crate::news::security::auth;
 use anyhow::Result;
 use axum::async_trait;
-use axum::extract::Path;
 use axum::extract::State;
+use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::middleware;
 use axum::routing::{get, post};
@@ -19,29 +19,25 @@ pub fn routes(token: &str) -> Router<AppState> {
         .route("/news", post(publish))
         .route_layer(middleware::from_fn_with_state(token.to_owned(), auth))
         .route("/news", get(list))
-        .route("/news/:days_ago", get(list))
 }
 
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait NewsRepository: Send + Sync {
-    async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>>;
+    async fn list(&self, params: QueryParams) -> Result<Vec<News>, Box<dyn std::error::Error>>;
     async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>>;
 }
 
 // get news list handler
 pub async fn list(
     State(state): State<AppState>,
-    days_ago: Option<Path<u8>>,
+    params: Option<Query<QueryParams>>,
 ) -> Result<Json<Vec<News>>, StatusCode> {
     tracing::info!("Listing news");
 
-    let days_ago: u8 = match days_ago {
-        Some(Path(s)) => s,
-        None => 0,
-    };
+    let Query(params) = params.unwrap_or_default();
 
-    match state.repo.list(days_ago).await {
+    match state.repo.list(params).await {
         Ok(news) => Ok(Json(news)),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);

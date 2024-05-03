@@ -1,11 +1,11 @@
 use super::handlers::NewsRepository;
-use super::model::{News, NewsData};
+use super::model::{News, NewsData, QueryParams};
+use crate::pool::Pool;
 use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
 use diesel::prelude::*;
-use crate::pool::Pool;
-use diesel_async::{RunQueryDsl};
+use diesel_async::RunQueryDsl;
 
 pub struct NewsRepositoryImpl {
     pool: Pool,
@@ -19,20 +19,21 @@ impl NewsRepositoryImpl {
 
 #[async_trait]
 impl NewsRepository for NewsRepositoryImpl {
-    async fn list(&self, days_ago: u8) -> Result<Vec<News>, Box<dyn std::error::Error>> {
-        use diesel::dsl::{date, sql};
-
+    async fn list(&self, params: QueryParams) -> Result<Vec<News>, Box<dyn std::error::Error>> {
         let mut conn = self.pool.get().await?;
+        let order = match params.search {
+            Some(_) => {
+                todo!("implement semantic search")
+            }
+            None => news::pub_date.desc(),
+        };
         let res = news::table
             .select(News::as_select())
-            .filter(date(news::pub_date).eq(sql(&format!(
-                "date(now() - interval '{} days')",
-                days_ago
-            ))))
-            .order(news::pub_date.desc())
+            .order(order)
+            .limit(params.limit as i64)
             .load::<News>(&mut conn)
             .await?;
-        
+
         Ok(res)
     }
 
@@ -44,7 +45,7 @@ impl NewsRepository for NewsRepositoryImpl {
             .returning(News::as_returning())
             .get_result(&mut conn)
             .await?;
-        
+
         Ok(res)
     }
 }
