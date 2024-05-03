@@ -10,7 +10,6 @@ use axum::middleware;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
-use pgvector::Vector;
 #[cfg(test)]
 use mockall::automock;
 
@@ -53,16 +52,10 @@ pub async fn publish(
     tracing::info!("Publishing news");
     
     let title = input.get_title().to_owned();
-    let embeddings = tokio::spawn(async move {
-        state.model.forward(&title)
+    let v = tokio::spawn(async move {
+        state.model.vector(&title)
     }).await.unwrap().unwrap();
 
-    let (_, n_tokens, _) = embeddings.dims3().unwrap();
-    let embeddings = (embeddings.sum(1).unwrap() / (n_tokens as f64)).unwrap();
-    
-    tracing::info!("pooled embeddings shape: {:?}", embeddings.shape());
-
-    let v = Vector::from(embeddings.get(0).unwrap().to_vec1::<f32>().unwrap());
     let data = NewsData::new(&input, v);
 
     match state.repo.create(data).await {

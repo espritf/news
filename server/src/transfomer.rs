@@ -2,6 +2,7 @@ use anyhow::{Error as E, Result};
 use candle_core::{Device, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config, DTYPE};
+use pgvector::Vector;
 use tokenizers::tokenizer::Tokenizer;
 
 pub struct Model {
@@ -21,7 +22,7 @@ impl Model {
 
         Ok(Self { model, tokenizer })
     }
-    pub fn forward(&self, input: &str) -> Result<Tensor> {
+    fn forward(&self, input: &str) -> Result<Tensor> {
         let tokens = self
             .tokenizer
             .encode(input, true)
@@ -38,5 +39,16 @@ impl Model {
         let ys = self.model.forward(&token_ids, &token_type_ids).unwrap();
 
         Ok(ys)
+    }
+    pub fn vector(&self, input: &str) -> Result<Vector> {
+        let embeddings = self.forward(input)?;
+        let (_, n_tokens, _) = embeddings.dims3().unwrap();
+        let embeddings = (embeddings.sum(1).unwrap() / (n_tokens as f64)).unwrap();
+
+        tracing::info!("pooled embeddings shape: {:?}", embeddings.shape());
+
+        let v = Vector::from(embeddings.get(0).unwrap().to_vec1::<f32>().unwrap());
+
+        Ok(v)
     }
 }
