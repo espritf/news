@@ -38,12 +38,12 @@
 <main>
     <h1>news</h1>
 
-    <!--<div id="search">-->
-        <!--<form on:submit|preventDefault={search}>-->
-            <!--<input type="text" name="query"/>-->
-            <!--<button type="submit">Search</button>-->
-        <!--</form>-->
-    <!--</div>-->
+    <div id="search">
+        <form on:submit|preventDefault={search}>
+            <input type="text" name="query"/>
+            <button type="submit">Search</button>
+        </form>
+    </div>
 
     {#await data}
         <p>Loading...</p>

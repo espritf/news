@@ -1,5 +1,6 @@
 use super::model::{News, NewsInput, NewsData, QueryParams};
 use crate::app::AppState;
+use crate::news::model::ListParams;
 use crate::news::security::auth;
 use anyhow::Result;
 use axum::extract::State;
@@ -20,11 +21,16 @@ pub fn routes(token: &str) -> Router<AppState> {
 // get news list handler
 pub async fn list(
     State(state): State<AppState>,
-    params: Option<Query<QueryParams>>,
+    Query(params): Query<QueryParams>,
 ) -> Result<Json<Vec<News>>, StatusCode> {
     tracing::info!("Listing news");
 
-    let Query(params) = params.unwrap_or_default();
+    tracing::debug!("Query params: {:?}", params);
+
+    let params = ListParams {
+        limit: params.limit.unwrap_or(100),
+        search: params.search.map(|s| state.model.vector(&s).unwrap()),
+    };
 
     match state.repo.list(params).await {
         Ok(news) => Ok(Json(news)),

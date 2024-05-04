@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::news::model::{News, NewsData, QueryParams};
+use crate::news::model::{ListParams, News, NewsData};
 use anyhow::Result;
 use axum::async_trait;
 use pgvector::Vector;
@@ -9,7 +9,7 @@ use mockall::automock;
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait NewsRepository: Send + Sync {
-    async fn list(&self, params: QueryParams) -> Result<Vec<News>, Box<dyn std::error::Error>>;
+    async fn list(&self, params: ListParams) -> Result<Vec<News>, Box<dyn std::error::Error>>;
     async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>>;
 }
 

@@ -1,11 +1,15 @@
 use crate::app::NewsRepository;
-use super::model::{News, NewsData, QueryParams};
+use super::model::{News, NewsData, ListParams};
 use crate::pool::Pool;
 use crate::schema::news;
 use anyhow::Result;
 use axum::async_trait;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use pgvector::VectorExpressionMethods;
+
+use diesel::expression::expression_types::NotSelectable;
+type DB = diesel::pg::Pg;
 
 pub struct NewsRepositoryImpl {
     pool: Pool,
@@ -19,13 +23,11 @@ impl NewsRepositoryImpl {
 
 #[async_trait]
 impl NewsRepository for NewsRepositoryImpl {
-    async fn list(&self, params: QueryParams) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+    async fn list(&self, params: ListParams) -> Result<Vec<News>, Box<dyn std::error::Error>> {
         let mut conn = self.pool.get().await?;
-        let order = match params.search {
-            Some(_) => {
-                todo!("implement semantic search")
-            }
-            None => news::pub_date.desc(),
+        let order: Box<dyn BoxableExpression<news::table, DB, SqlType = NotSelectable>> = match params.search {
+            Some(query) => Box::new(news::title_v.l2_distance(query).asc()),
+            None => Box::new(news::pub_date.desc()),
         };
         let res = news::table
             .select(News::as_select())
