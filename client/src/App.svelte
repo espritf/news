@@ -16,13 +16,17 @@
         return Object.entries(days).map(([name, items]) => ({name, items}));
     }
 
+    function goupSearch(items) {
+        return [{name: "Search results", items: items}];
+    }
+
     async function getItems(query) {
         const url = base + 'news' + (query ? `?search=${query}` : '');
 
         const res  = await fetch(url);
         const data = await res.json();
 
-        const grouped = groupByDay(data);
+        const grouped = (query ? goupSearch(data) : groupByDay(data));
 
         return grouped;
     }
