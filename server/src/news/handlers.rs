@@ -27,9 +27,14 @@ pub async fn list(
 
     tracing::debug!("Query params: {:?}", params);
 
+    let search = match params.search {
+        Some(s) => Some(state.model.vector(&s).await.unwrap()),
+        None => None,
+    };
+
     let params = ListParams {
         limit: params.limit.unwrap_or(100),
-        search: params.search.map(|s| state.model.vector(&s).unwrap()),
+        search,
     };
 
     match state.repo.list(params).await {
@@ -48,10 +53,7 @@ pub async fn publish(
     tracing::info!("Publishing news");
     
     let title = input.get_title().to_owned();
-    let v = tokio::spawn(async move {
-        state.model.vector(&title)
-    }).await.unwrap().unwrap();
-
+    let v = state.model.vector(&title).await.unwrap();
     let data = NewsData::new(&input, v);
 
     match state.repo.create(data).await {

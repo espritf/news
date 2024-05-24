@@ -14,8 +14,9 @@ pub trait NewsRepository: Send + Sync {
 }
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait VectorProvider: Send + Sync {
-   fn vector(&self, text: &str) -> Result<Vector>; 
+   async fn vector(&self, text: &str) -> Result<Vector>; 
 }
 
 #[derive(Clone)]

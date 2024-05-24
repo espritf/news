@@ -12,7 +12,7 @@ use std::env;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use transfomer::Model;
+use transfomer::ollama::Model;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -26,10 +26,7 @@ async fn main() -> Result<()> {
     let pool = Pool::new(uri)?;
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
 
-    let config = env::var("MODEL_CONFIG").unwrap_or("MODEL_CONFIG not set".to_string());
-    let tokenizer = env::var("MODELTOKENIZER").unwrap_or("MODELTOKENIZER not set".to_string());
-    let weights = env::var("MODEL_WEIGHTS").unwrap_or("MODEL_WEIGHTS not set".to_string());
-    let model = Arc::new(Model::build(&config, &tokenizer, &weights)?);
+    let model = Arc::new(Model {});
 
     let state = AppState { repo, model };
 
