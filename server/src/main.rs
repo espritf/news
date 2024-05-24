@@ -26,7 +26,8 @@ async fn main() -> Result<()> {
     let pool = Pool::new(uri)?;
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
 
-    let model = Arc::new(Model {});
+    let model = &env::var("EMBEDDING_MODEL")?;
+    let model = Arc::new(Model::new(&model));
 
     let state = AppState { repo, model };
 

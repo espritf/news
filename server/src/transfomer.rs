@@ -9,7 +9,17 @@ pub mod ollama {
     use serde::Deserialize;
     use std::time::Duration;
 
-    pub struct Model;
+    pub struct Model {
+        name: String,
+    }
+
+    impl Model {
+        pub fn new(name: &str) -> Self {
+            Self {
+                name: name.to_owned(),
+            }
+        }
+    }
 
     #[derive(Deserialize)]
     struct Response {
@@ -20,7 +30,7 @@ pub mod ollama {
     impl VectorProvider for Model {
         async fn vector(&self, input: &str) -> Result<Vector> {
             let json = &serde_json::json!({
-                "model": "all-minilm",
+                "model": self.name,
                 "prompt": input,
             });
 
