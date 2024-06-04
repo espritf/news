@@ -7,6 +7,8 @@ use axum::extract::State;
 use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::middleware;
+use axum::response::IntoResponse;
+use axum::response::Response;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
@@ -18,11 +20,31 @@ pub fn routes(token: &str) -> Router<AppState> {
         .route("/news", get(list))
 }
 
+pub struct AppError(anyhow::Error);
+
+// tell axum how to convert our error type into a Response
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        tracing::error!("Error occurred: {}", self.0);
+        (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error").into_response()
+    }
+}
+
+// enable the use of ? to simplify error handling
+impl<E> From<E> for AppError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
+}
+
 // get news list handler
 pub async fn list(
     State(state): State<AppState>,
     Query(params): Query<QueryParams>,
-) -> Result<Json<Vec<News>>, StatusCode> {
+) -> Result<Json<Vec<News>>, AppError> {
     tracing::info!("Listing news");
 
     tracing::debug!("Query params: {:?}", params);
@@ -37,32 +59,22 @@ pub async fn list(
         search,
     };
 
-    match state.repo.list(params).await {
-        Ok(news) => Ok(Json(news)),
-        Err(e) => {
-            tracing::error!("Error occurred: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    let news = state.repo.list(params).await?;
+    Ok(Json(news))
 }
 
 pub async fn publish(
     State(state): State<AppState>,
     Json(input): Json<NewsInput>,
-) -> Result<Json<News>, StatusCode> {
+) -> Result<Json<News>, AppError> {
     tracing::info!("Publishing news");
     
     let title = input.get_title().to_owned();
     let v = state.model.vector(&title).await.unwrap();
     let data = NewsData::new(&input, v);
 
-    match state.repo.create(data).await {
-        Ok(news) => Ok(Json(news)),
-        Err(e) => {
-            tracing::error!("Error occurred: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    let news = state.repo.create(data).await?;
+    Ok(Json(news))
 }
 
 #[cfg(test)]

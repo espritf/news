@@ -23,7 +23,7 @@ impl NewsRepositoryImpl {
 
 #[async_trait]
 impl NewsRepository for NewsRepositoryImpl {
-    async fn list(&self, params: ListParams) -> Result<Vec<News>, Box<dyn std::error::Error>> {
+    async fn list(&self, params: ListParams) -> Result<Vec<News>> {
         let mut conn = self.pool.get().await?;
         let order: Box<dyn BoxableExpression<news::table, DB, SqlType = NotSelectable>> = match params.search {
             Some(query) => Box::new(news::title_v.l2_distance(query).asc()),
@@ -39,7 +39,7 @@ impl NewsRepository for NewsRepositoryImpl {
         Ok(res)
     }
 
-    async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>> {
+    async fn create(&self, input: NewsData) -> Result<News> {
         let mut conn = self.pool.get().await?;
 
         let res = diesel::insert_into(news::table)

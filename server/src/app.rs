@@ -9,8 +9,8 @@ use mockall::automock;
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait NewsRepository: Send + Sync {
-    async fn list(&self, params: ListParams) -> Result<Vec<News>, Box<dyn std::error::Error>>;
-    async fn create(&self, input: NewsData) -> Result<News, Box<dyn std::error::Error>>;
+    async fn list(&self, params: ListParams) -> Result<Vec<News>>;
+    async fn create(&self, input: NewsData) -> Result<News>;
 }
 
 #[cfg_attr(test, automock)]
