@@ -55,7 +55,7 @@ impl NewsData {
     pub fn new(input: &NewsInput, title_v: Vector) -> Self {
         Self {
             title: input.title.clone(),
-            pub_date: input.pub_date.clone(),
+            pub_date: input.pub_date,
             sources: input.sources.clone(),
             title_v,
         }
