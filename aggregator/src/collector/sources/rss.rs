@@ -15,13 +15,15 @@ pub fn fetch(config: &Config) -> Result<Data> {
     let res = reqwest::blocking::get(&config.url)?.text()?;
     let ch = rss::Channel::read_from(res.as_bytes())?;
 
-    let last_build_date = DateTime::parse_from_rfc2822(ch.last_build_date().required("channel last_build_date")?)?;
+    let last_build_date = ch.last_build_date()
+        .and_then(|d| DateTime::parse_from_rfc2822(d).ok())
+        .map(|d| d.naive_local());
 
     let channel = Channel {
         title: ch.title().to_owned(),
         link: config.url.as_str().to_owned(),
         language: ch.language().required("channel language")?.to_owned(),
-        last_build_date: Some(last_build_date.naive_local()),
+        last_build_date,
     };
 
     let items = ch
