@@ -3,10 +3,18 @@ use crate::error::IsRequired;
 use anyhow::Result;
 use chrono::DateTime;
 use serde::Deserialize;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
     url: String,
+}
+
+pub fn hash_id(id: String) -> String {
+    let mut hasher = DefaultHasher::new();
+    id.hash(&mut hasher);
+    format!("{:x}", hasher.finish())
 }
 
 pub fn fetch(config: &Config) -> Result<Data> {
@@ -32,11 +40,21 @@ pub fn fetch(config: &Config) -> Result<Data> {
         .map(|i| {
             let pub_date = DateTime::parse_from_rfc2822(i.pub_date().required("item pub_date")?)?;
             let tags: Vec<&str> = i.categories().iter().map(|c| c.name()).collect();
+            let link = i.link().required("item link")?.to_owned();
+
+            let guid = match i.guid() {
+                Some(g) => g.value().to_owned(),
+                None => link.clone(),
+            };
+
+            let guid = hash_id(guid);
+
+            tracing::debug!("Fetch item: {}", guid);
 
             let item = Item {
-                guid: i.guid().required("item guid")?.value().to_owned(),
+                guid,
+                link,
                 title: i.title().required("item title")?.to_owned(),
-                link: i.link().required("item link")?.to_owned(),
                 pub_date: pub_date.naive_local().to_owned(),
                 tags: Some(serde_json::to_string(&tags)?),
             };
