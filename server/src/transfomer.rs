@@ -34,15 +34,17 @@ pub mod ollama {
                 "prompt": input,
             });
 
-            let res = reqwest::Client::builder()
+            let response = reqwest::Client::builder()
                 .timeout(Duration::new(240, 0))
                 .build()?
                 .post("http://localhost:11434/api/embeddings")
                 .json(json)
                 .send()
-                .await?
-                .json::<Response>()
                 .await?;
+
+            let response = response.error_for_status()?;
+            
+            let res = response.json::<Response>().await?;
 
             tracing::info!("embeddings size: {:?}", res.embedding.len());
 
