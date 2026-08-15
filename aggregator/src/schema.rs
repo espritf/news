@@ -25,7 +25,4 @@ diesel::table! {
 
 diesel::joinable!(items -> channels (channel_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    channels,
-    items,
-);
+diesel::allow_tables_to_appear_in_same_query!(channels, items,);

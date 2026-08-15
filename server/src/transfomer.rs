@@ -42,7 +42,13 @@ pub mod ollama {
                 .send()
                 .await?;
 
-            let response = response.error_for_status()?;
+            if ! response.status().is_success() {
+                let status = response.status();
+                let body = response.text().await?;
+
+                tracing::error!("Request failed with status {:?}: {}", status, body);
+                return Err(anyhow::anyhow!("Request failed with status {}: {}", status, body));
+            }
             
             let res = response.json::<Response>().await?;
 

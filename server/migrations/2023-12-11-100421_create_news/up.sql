@@ -5,5 +5,5 @@ create table news
     sources     json not null ,
     title       text not null,
     pub_date    timestamp not null,
-    title_v     vector(384) not null
+    title_v     vector(768) not null
 );
