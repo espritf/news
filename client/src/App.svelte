@@ -31,11 +31,14 @@
         return grouped;
     }
 
-    let query;
+    let query = $state(undefined);
 
-    const search = (e) => query = e.target.query.value;
+    const search = (e) => {
+        e.preventDefault();
+        query = e.target.query.value;
+    };
 
-    $: data = getItems(query);
+    let data = $derived(getItems(query));
 
 </script>
 
@@ -43,7 +46,7 @@
     <h1>news</h1>
 
     <div id="search">
-        <form on:submit|preventDefault={search}>
+        <form onsubmit={search}>
             <input type="text" name="query"/>
             <button type="submit">Search</button>
         </form>
@@ -60,7 +63,7 @@
                 {#each day.items as item}
                     <div>
                         <p>
-                            <Player text="{item.title}"/>
+                            <Player text={item.title}/>
                             <span>
                                 {item.title}
                             </span>

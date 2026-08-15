@@ -1,9 +1,10 @@
 <script>
-    export let text;
-    let state = 'play';
+    import { untrack } from 'svelte';
+    let { text } = $props();
+    let state = $state('play');
 
     const synthesis = window.speechSynthesis;
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(untrack(() => text));
 
     utterance.onstart = function() {
         state = 'pause';
@@ -20,9 +21,8 @@
             synthesis.cancel();
         }
     }
-
 </script>
 
-<button class="round" on:click={toggleState}>
-    <i class="fa-solid fa-{state}"/>
+<button class="round" aria-label="Play/pause" onclick={toggleState}>
+    <i class="fa-solid fa-{state}"></i>
 </button>
