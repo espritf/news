@@ -12,6 +12,13 @@
         pkgs = import nixpkgs { inherit system; };
       in
       {
+        apps.default = {
+          type = "app";
+          program = "${pkgs.writeShellScript "dev" ''
+            ${pkgs.bun}/bin/bun run dev
+          ''}";
+        };
+
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.bun
