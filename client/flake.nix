@@ -16,6 +16,9 @@
           packages = [
             pkgs.bun
             pkgs.nodejs
+            pkgs.svelte-language-server
+            pkgs.typescript-language-server
+            pkgs.vscode-langservers-extracted
           ];
         };
       });
