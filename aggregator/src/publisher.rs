@@ -11,7 +11,7 @@ use serde_json::Value;
 pub struct News {
     sources: Vec<String>,
     title: String,
-    content: Option<String>,
+    content: String,
     pub_date: NaiveDateTime,
 }
 
@@ -32,14 +32,14 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
 
     for (id, link, title, content, pub_date, lang) in items {
 
+        let content = content.ok_or_else(|| anyhow::anyhow!("Item {} has no content", id))?;
+
         let (title, content) = if lang == "en" {
             tracing::info!("Skip translation for {}", title);
             (title, content)
         } else {
             let title = translator::translate(&lang, "en", &title)?;
-            let content = content
-                .map(|c| translator::translate(&lang, "en", &c))
-                .transpose()?;
+            let content = translator::translate(&lang, "en", &content)?;
             (title, content)
         };
 
