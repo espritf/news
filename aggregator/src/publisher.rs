@@ -11,16 +11,17 @@ use serde_json::Value;
 pub struct News {
     sources: Vec<String>,
     title: String,
+    content: Option<String>,
     pub_date: NaiveDateTime,
 }
 
-type Item = (i32, String, String, NaiveDateTime, String);
+type Item = (i32, String, String, Option<String>, NaiveDateTime, String);
 
 fn not_published(conn: &mut SqliteConnection) -> QueryResult<Vec<Item>> {
     items::table
         .inner_join(channels::table)
         .filter(items::published_id.is_null())
-        .select((items::id, items::link, items::title, items::pub_date, channels::language))
+        .select((items::id, items::link, items::title, items::content, items::pub_date, channels::language))
         .load(conn)
 }
 
@@ -29,18 +30,23 @@ pub fn publish(conn: &mut SqliteConnection) -> Result<()> {
 
     let items = not_published(conn)?;
 
-    for (id, link, title, pub_date, lang) in items {
+    for (id, link, title, content, pub_date, lang) in items {
 
-        let title = if lang == "en" {
+        let (title, content) = if lang == "en" {
             tracing::info!("Skip translation for {}", title);
-            title
+            (title, content)
         } else {
-            translator::translate(&lang, "en", &title)?
+            let title = translator::translate(&lang, "en", &title)?;
+            let content = content
+                .map(|c| translator::translate(&lang, "en", &c))
+                .transpose()?;
+            (title, content)
         };
 
         let publication = News {
             sources: vec![link],
             title,
+            content,
             pub_date,
         };
         

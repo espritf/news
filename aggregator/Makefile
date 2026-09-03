@@ -12,4 +12,6 @@ drop:
 
 reset-republish:
 	sqlite3 var/aggregator.db 'update items set published_id = null'
-	
+
+show:
+	sqlite3 var/aggregator.db 'select * from items'

@@ -20,6 +20,7 @@ diesel::table! {
         tags -> Nullable<Text>,
         pub_date -> Timestamp,
         published_id -> Nullable<Integer>,
+        content -> Nullable<Text>,
     }
 }
 
