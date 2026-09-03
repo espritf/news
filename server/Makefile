@@ -12,3 +12,5 @@ drop:
 redo:
 	diesel migration redo --database-url=$(DATABASE_URL)
 	
+show:
+	psql -d $(POSTGRES_DB) -c "select * from news;"

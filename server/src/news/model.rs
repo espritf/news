@@ -15,15 +15,23 @@ pub struct News {
     title: String,
     pub_date: NaiveDateTime,
     sources: serde_json::Value,
+    content: String,
 }
 
 impl News {
-    pub fn new(id: i32, title: String, pub_date: NaiveDateTime, sources: Vec<String>) -> Self {
+    pub fn new(
+        id: i32,
+        title: String,
+        pub_date: NaiveDateTime,
+        sources: Vec<String>,
+        content: String,
+    ) -> Self {
         Self {
             id,
             title,
             pub_date,
             sources: sources.into(),
+            content,
         }
     }
 }
@@ -33,6 +41,7 @@ pub struct NewsInput {
     pub title: String,
     pub_date: NaiveDateTime,
     sources: serde_json::Value,
+    content: String,
 }
 
 impl NewsInput {
@@ -49,6 +58,7 @@ pub struct NewsData {
     pub_date: NaiveDateTime,
     sources: serde_json::Value,
     title_v: Vector,
+    content: String,
 }
 
 impl NewsData {
@@ -58,6 +68,7 @@ impl NewsData {
             pub_date: input.pub_date,
             sources: input.sources.clone(),
             title_v,
+            content: input.content.clone(),
         }
     }
 }

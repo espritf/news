@@ -124,6 +124,7 @@ mod tests {
                 "title".to_string(),
                 NaiveDateTime::from_str("2024-01-01T18:00:00").unwrap(),
                 Vec::new(),
+                "content".to_string(),
             ))
         });
 
@@ -147,7 +148,8 @@ mod tests {
                 json!({
                     "title": "title",
                     "pub_date": "2024-01-01T18:00:00",
-                    "sources": ["test"]
+                    "sources": ["test"],
+                    "content": "content"
                 })
                 .to_string()
                 .into(),

@@ -10,5 +10,6 @@ diesel::table! {
         title -> Text,
         pub_date -> Timestamp,
         title_v -> Vector,
+        content -> Text,
     }
 }

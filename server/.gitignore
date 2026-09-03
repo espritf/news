@@ -3,3 +3,5 @@
 
 # devenv
 .devenv*
+
+/migrations/.diesel_lock
