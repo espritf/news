@@ -1,4 +1,3 @@
-create extension vector;
 create table news
 (
     id          serial primary key,
