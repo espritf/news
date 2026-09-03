@@ -12,12 +12,35 @@ use axum::response::Response;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
+use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
+use utoipa::{Modify, OpenApi};
 
 pub fn routes(token: &str) -> Router<AppState> {
     Router::new()
         .route("/news", post(publish))
         .route_layer(middleware::from_fn_with_state(token.to_owned(), auth))
         .route("/news", get(list))
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(list, publish),
+    components(schemas(News, NewsInput)),
+    tags((name = "news", description = "News publishing and listing")),
+    modifiers(&SecurityAddon),
+)]
+pub struct ApiDoc;
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().expect("components exist");
+        components.add_security_scheme(
+            "api_token",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("auth"))),
+        );
+    }
 }
 
 pub struct AppError(anyhow::Error);
@@ -40,7 +63,20 @@ where
     }
 }
 
-// get news list handler
+/// List news
+///
+/// Returns a paginated listing of news items ordered by publish date, or by semantic
+/// similarity to `search` (via title embedding) when that query param is provided.
+#[utoipa::path(
+    get,
+    path = "/news",
+    tag = "news",
+    params(QueryParams),
+    responses(
+        (status = 200, description = "News items", body = [News]),
+        (status = 500, description = "Internal server error"),
+    ),
+)]
 pub async fn list(
     State(state): State<AppState>,
     Query(params): Query<QueryParams>,
@@ -63,6 +99,22 @@ pub async fn list(
     Ok(Json(news))
 }
 
+/// Publish news
+///
+/// Embeds the title via the configured Ollama model and stores the news item.
+/// Requires the `auth` header to match the configured API token.
+#[utoipa::path(
+    post,
+    path = "/news",
+    tag = "news",
+    request_body = NewsInput,
+    responses(
+        (status = 200, description = "Created news item", body = News),
+        (status = 401, description = "Missing or invalid auth header"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("api_token" = [])),
+)]
 pub async fn publish(
     State(state): State<AppState>,
     Json(input): Json<NewsInput>,

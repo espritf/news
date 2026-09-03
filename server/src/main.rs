@@ -4,6 +4,7 @@ pub mod pool;
 pub mod transfomer;
 pub mod news;
 
+use crate::news::handlers::ApiDoc;
 use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
 use app::AppState;
@@ -13,6 +14,8 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use transfomer::ollama::Model;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -38,6 +41,7 @@ async fn main() -> Result<()> {
     let app = news::handlers::routes(&token)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind(address).await?;

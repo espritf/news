@@ -69,3 +69,6 @@ bun run dev
 - `POST /news` — publish a news item (`title`, `pub_date`, `sources`), requires an `auth`
   header matching `NEWS_API_TOKEN`. Used by the aggregator.
 
+Interactive OpenAPI docs are served by the server at `http://localhost:3000/swagger-ui` (raw spec at
+`http://localhost:3000/api-docs/openapi.json`)
+
