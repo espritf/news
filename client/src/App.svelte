@@ -32,6 +32,16 @@
     }
 
     let query = $state(undefined);
+    let expanded = $state(new Set());
+
+    function toggleExpanded(id) {
+        if (expanded.has(id)) {
+            expanded.delete(id);
+        } else {
+            expanded.add(id);
+        }
+        expanded = new Set(expanded);
+    }
 
     const search = (e) => {
         e.preventDefault();
@@ -62,12 +72,15 @@
             <div>
                 {#each day.items as item}
                     <div>
-                        <p>
+                        <div>
                             <Player text={item.title}/>
-                            <span>
+                            <span class="title" role="button" tabindex="0" onclick={() => toggleExpanded(item.id)} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpanded(item.id)}>
                                 {item.title}
                             </span>
                             <br/>
+                            {#if expanded.has(item.id)}
+                                <div class="content">{item.content}</div>
+                            {/if}
                             <small>
                                 {#each item.sources as source}
                                     <a href="{source}" target="_blank">{new URL(source).host.split('.').reverse()[1]}</a>
@@ -75,7 +88,7 @@
                                 <a href="{item.link}" target="_blank">{item.source}</a>
                                 {new Date(item.pub_date).toUTCString()}
                             </small>
-                        </p>
+                        </div>
                     </div>
                 {:else}
                     <div class="msg">No news for {day.name}</div>
