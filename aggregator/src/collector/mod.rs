@@ -49,15 +49,25 @@ fn persist(conn: &mut SqliteConnection, data: Data) -> Result<()> {
         .items
         .into_iter()
         .filter(|item| !existing.contains(&item.guid))
-        .filter_map(|item| match content::fetch(&item.link) {
-            Ok(content) => Some(ItemOfChannel {
-                channel_id: id,
-                content,
-                item,
-            }),
-            Err(e) => {
-                tracing::warn!("Skip item {} ({}): {}", item.guid, item.link, e);
-                None
+        .filter_map(|item| {
+            tracing::info!("Fetch content for item {} ({})", item.guid, item.link);
+            match content::fetch(&item.link) {
+                Ok(content) => {
+                    tracing::info!(
+                        "Fetched content for item {} ({} chars)",
+                        item.guid,
+                        content.len()
+                    );
+                    Some(ItemOfChannel {
+                        channel_id: id,
+                        content,
+                        item,
+                    })
+                }
+                Err(e) => {
+                    tracing::warn!("Skip item {} ({}): {}", item.guid, item.link, e);
+                    None
+                }
             }
         })
         .collect();
