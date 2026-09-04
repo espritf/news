@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use crate::news::lister::NewsLister;
 use crate::news::model::{ChunkInput, ListParams, News, NewsData};
 use crate::news::publisher::NewsPublisher;
 use anyhow::Result;
@@ -31,5 +32,9 @@ pub struct AppState {
 impl AppState {
     pub fn publisher(&self) -> NewsPublisher {
         NewsPublisher::new(self.repo.clone(), self.model.clone(), self.max_chunk_chars)
+    }
+
+    pub fn lister(&self) -> NewsLister {
+        NewsLister::new(self.repo.clone(), self.model.clone())
     }
 }
