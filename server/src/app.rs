@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use crate::news::model::{ChunkInput, ListParams, News, NewsData};
+use crate::news::publisher::NewsPublisher;
 use anyhow::Result;
 use axum::async_trait;
 use pgvector::Vector;
@@ -25,4 +26,10 @@ pub struct AppState {
     pub repo: Arc<dyn NewsRepository>,
     pub model: Arc<dyn VectorProvider>,
     pub max_chunk_chars: usize,
+}
+
+impl AppState {
+    pub fn publisher(&self) -> NewsPublisher {
+        NewsPublisher::new(self.repo.clone(), self.model.clone(), self.max_chunk_chars)
+    }
 }

@@ -1,5 +1,5 @@
-use super::model::{ChunkInput, News, NewsInput, NewsData, QueryParams};
-use crate::app::{AppState, NewsRepository, VectorProvider};
+use super::model::{News, NewsInput, QueryParams};
+use crate::app::AppState;
 use crate::news::model::ListParams;
 use crate::news::security::auth;
 use anyhow::Result;
@@ -12,7 +12,6 @@ use axum::response::Response;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
-use std::sync::Arc;
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
@@ -125,43 +124,9 @@ pub async fn publish(
 ) -> Result<Json<News>, AppError> {
     tracing::info!("Publishing news");
 
-    let chunks = input.search_chunks(state.max_chunk_chars);
-    let data = NewsData::new(&input);
-
-    let news = state.repo.create(data).await?;
-
-    let news_id = news.id();
-    let model = state.model.clone();
-    let repo = state.repo.clone();
-
-    tokio::spawn(async move {
-        if let Err(e) = embed_chunks(model, repo, news_id, chunks).await {
-            tracing::error!("Failed to embed chunks for news {}: {:?}", news_id, e);
-        }
-    });
+    let news = state.publisher().publish(input).await?;
 
     Ok(Json(news))
-}
-
-/// Embeds each chunk of a just-published news item and stores it, run out-of-band from the
-/// `publish` request so slow embedding calls don't hold up the HTTP response.
-async fn embed_chunks(
-    model: Arc<dyn VectorProvider>,
-    repo: Arc<dyn NewsRepository>,
-    news_id: i32,
-    texts: Vec<String>,
-) -> Result<()> {
-    let mut chunks = Vec::new();
-    for (i, text) in texts.into_iter().enumerate() {
-        let chunk_v = model.vector(&text).await?;
-        chunks.push(ChunkInput {
-            chunk_index: i as i32,
-            chunk_text: text,
-            chunk_v,
-        });
-    }
-
-    repo.insert_chunks(news_id, chunks).await
 }
 
 #[cfg(test)]
