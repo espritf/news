@@ -9,7 +9,6 @@ diesel::table! {
         sources -> Json,
         title -> Text,
         pub_date -> Timestamp,
-        title_v -> Vector,
         content -> Text,
     }
 }

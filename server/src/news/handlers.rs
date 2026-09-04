@@ -102,9 +102,8 @@ pub async fn list(
 
 /// Publish news
 ///
-/// Embeds the title (stored on the news item) and separately chunks & embeds the content for
-/// semantic search, via the configured Ollama model. Requires the `auth` header to match the
-/// configured API token.
+/// Chunks & embeds the content via the configured Ollama model for semantic search, and
+/// stores the news item. Requires the `auth` header to match the configured API token.
 #[utoipa::path(
     post,
     path = "/news",
@@ -123,9 +122,7 @@ pub async fn publish(
 ) -> Result<Json<News>, AppError> {
     tracing::info!("Publishing news");
 
-    let title = input.get_title();
-    let v = state.model.vector(title).await?;
-    let data = NewsData::new(&input, v);
+    let data = NewsData::new(&input);
 
     let mut chunks = Vec::new();
     for (i, text) in input.search_chunks().into_iter().enumerate() {

@@ -79,10 +79,6 @@ pub struct NewsInput {
 }
 
 impl NewsInput {
-    pub fn get_title(&self) -> &str {
-        &self.title
-    }
-
     pub fn get_content(&self) -> &str {
         &self.content
     }
@@ -101,17 +97,15 @@ pub struct NewsData {
     title: String,
     pub_date: NaiveDateTime,
     sources: serde_json::Value,
-    title_v: Vector,
     content: String,
 }
 
 impl NewsData {
-    pub fn new(input: &NewsInput, title_v: Vector) -> Self {
+    pub fn new(input: &NewsInput) -> Self {
         Self {
             title: input.title.clone(),
             pub_date: input.pub_date,
             sources: input.sources.clone(),
-            title_v,
             content: input.content.clone(),
         }
     }
