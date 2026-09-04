@@ -125,7 +125,7 @@ pub async fn publish(
     let data = NewsData::new(&input);
 
     let mut chunks = Vec::new();
-    for (i, text) in input.search_chunks().into_iter().enumerate() {
+    for (i, text) in input.search_chunks(state.max_chunk_chars).into_iter().enumerate() {
         let chunk_v = state.model.vector(&text).await?;
         chunks.push(ChunkInput {
             chunk_index: i as i32,
@@ -161,7 +161,11 @@ mod tests {
 
         let repo = Arc::new(repo);
         let model = Arc::new(vp);
-        let state = AppState { repo, model };
+        let state = AppState {
+            repo,
+            model,
+            max_chunk_chars: 1024,
+        };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);
@@ -196,7 +200,11 @@ mod tests {
 
         let repo = Arc::new(repo);
         let model = Arc::new(vp);
-        let state = AppState { repo, model };
+        let state = AppState {
+            repo,
+            model,
+            max_chunk_chars: 1024,
+        };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);

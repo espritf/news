@@ -33,7 +33,13 @@ async fn main() -> Result<()> {
     let ollama_url = &env::var("OLLAMA_URL")?;
     let model = Arc::new(Model::new(model, ollama_url));
 
-    let state = AppState { repo, model };
+    let max_chunk_chars = env::var("MAX_CHUNK_CHARS").expect("Expected to be set").parse()?;
+
+    let state = AppState {
+        repo,
+        model,
+        max_chunk_chars,
+    };
 
     let cors = CorsLayer::new().allow_origin(Any);
 

@@ -8,10 +8,6 @@ use utoipa::{IntoParams, ToSchema};
 #[allow(dead_code)]
 type Backend = diesel::pg::Pg;
 
-/// Maximum size (in characters) of a single chunk handed to the embedding model, kept
-/// conservatively below typical embedding-model context windows.
-pub const MAX_CHUNK_CHARS: usize = 2000;
-
 /// Splits `text` into word-bounded chunks no longer than `max_chars`, so each chunk stays
 /// within the embedding model's context window.
 pub fn chunk_text(text: &str, max_chars: usize) -> Vec<String> {
@@ -85,8 +81,8 @@ impl NewsInput {
 
     /// Text used for content-based semantic search: the article content, chunked by
     /// `chunk_text` before embedding so long articles don't exceed the model's context window.
-    pub fn search_chunks(&self) -> Vec<String> {
-        chunk_text(&self.content, MAX_CHUNK_CHARS)
+    pub fn search_chunks(&self, max_chars: usize) -> Vec<String> {
+        chunk_text(&self.content, max_chars)
     }
 }
 

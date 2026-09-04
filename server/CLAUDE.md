@@ -34,7 +34,7 @@ Postgres database), `make redo` (redo the last migration).
 
 Config is loaded via `dotenv-flow` (`.env` then `.env.local` overrides), see `src/main.rs`.
 
-- `.env` — shared, checked in: `DATABASE_URL`, `POSTGRES_*`, `SERVER_ADDR`, `EMBEDDING_MODEL`, `OLLAMA_URL`, `RUST_LOG`
+- `.env` — shared, checked in: `DATABASE_URL`, `POSTGRES_*`, `SERVER_ADDR`, `EMBEDDING_MODEL`, `OLLAMA_URL`, `MAX_CHUNK_CHARS`, `RUST_LOG`
 - `.env.local` — gitignored, overrides locally: `NEWS_API_TOKEN`, `RUST_LOG`
 
 `EMBEDDING_MODEL` must match a model already pulled into the local Ollama daemon (see

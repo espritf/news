@@ -23,4 +23,5 @@ pub trait VectorProvider: Send + Sync {
 pub struct AppState {
     pub repo: Arc<dyn NewsRepository>,
     pub model: Arc<dyn VectorProvider>,
+    pub max_chunk_chars: usize,
 }
