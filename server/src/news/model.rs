@@ -1,4 +1,4 @@
-use crate::schema::news;
+use crate::schema::{news, news_chunks};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use pgvector::Vector;
@@ -7,6 +7,33 @@ use utoipa::{IntoParams, ToSchema};
 
 #[allow(dead_code)]
 type Backend = diesel::pg::Pg;
+
+/// Maximum size (in characters) of a single chunk handed to the embedding model, kept
+/// conservatively below typical embedding-model context windows.
+pub const MAX_CHUNK_CHARS: usize = 2000;
+
+/// Splits `text` into word-bounded chunks no longer than `max_chars`, so each chunk stays
+/// within the embedding model's context window.
+pub fn chunk_text(text: &str, max_chars: usize) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut current = String::new();
+
+    for word in text.split_whitespace() {
+        let extra = if current.is_empty() { 0 } else { 1 };
+        if !current.is_empty() && current.len() + extra + word.len() > max_chars {
+            chunks.push(std::mem::take(&mut current));
+        }
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(word);
+    }
+    if !current.is_empty() {
+        chunks.push(current);
+    }
+
+    chunks
+}
 
 #[derive(Serialize, Queryable, Selectable, Debug, PartialEq, Insertable, ToSchema)]
 #[diesel(table_name = news)]
@@ -36,6 +63,10 @@ impl News {
             content,
         }
     }
+
+    pub fn id(&self) -> i32 {
+        self.id
+    }
 }
 
 #[derive(Deserialize, Debug, ToSchema)]
@@ -50,6 +81,16 @@ pub struct NewsInput {
 impl NewsInput {
     pub fn get_title(&self) -> &str {
         &self.title
+    }
+
+    pub fn get_content(&self) -> &str {
+        &self.content
+    }
+
+    /// Text used for content-based semantic search: the article content, chunked by
+    /// `chunk_text` before embedding so long articles don't exceed the model's context window.
+    pub fn search_chunks(&self) -> Vec<String> {
+        chunk_text(&self.content, MAX_CHUNK_CHARS)
     }
 }
 
@@ -72,6 +113,35 @@ impl NewsData {
             sources: input.sources.clone(),
             title_v,
             content: input.content.clone(),
+        }
+    }
+}
+
+/// A chunk of searchable text paired with its embedding, ready to be persisted once the
+/// parent `News` row (and its id) exists.
+pub struct ChunkInput {
+    pub chunk_index: i32,
+    pub chunk_text: String,
+    pub chunk_v: Vector,
+}
+
+#[derive(Debug, PartialEq, Insertable)]
+#[diesel(table_name = news_chunks)]
+#[diesel(check_for_backend(Backend))]
+pub struct NewsChunkData {
+    news_id: i32,
+    chunk_index: i32,
+    chunk_text: String,
+    chunk_v: Vector,
+}
+
+impl NewsChunkData {
+    pub fn new(news_id: i32, chunk: ChunkInput) -> Self {
+        Self {
+            news_id,
+            chunk_index: chunk.chunk_index,
+            chunk_text: chunk.chunk_text,
+            chunk_v: chunk.chunk_v,
         }
     }
 }

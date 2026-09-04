@@ -1,4 +1,4 @@
-use super::model::{News, NewsInput, NewsData, QueryParams};
+use super::model::{ChunkInput, News, NewsInput, NewsData, QueryParams};
 use crate::app::AppState;
 use crate::news::model::ListParams;
 use crate::news::security::auth;
@@ -66,7 +66,8 @@ where
 /// List news
 ///
 /// Returns a paginated listing of news items ordered by publish date, or by semantic
-/// similarity to `search` (via title embedding) when that query param is provided.
+/// similarity to `search` (matched against chunked content embeddings) when that query
+/// param is provided.
 #[utoipa::path(
     get,
     path = "/news",
@@ -86,7 +87,7 @@ pub async fn list(
     tracing::debug!("Query params: {:?}", params);
 
     let search = match params.search {
-        Some(s) => Some(state.model.vector(&s).await.unwrap()),
+        Some(s) => Some(state.model.vector(&s).await?),
         None => None,
     };
 
@@ -101,8 +102,9 @@ pub async fn list(
 
 /// Publish news
 ///
-/// Embeds the title via the configured Ollama model and stores the news item.
-/// Requires the `auth` header to match the configured API token.
+/// Embeds the title (stored on the news item) and separately chunks & embeds the content for
+/// semantic search, via the configured Ollama model. Requires the `auth` header to match the
+/// configured API token.
 #[utoipa::path(
     post,
     path = "/news",
@@ -120,12 +122,22 @@ pub async fn publish(
     Json(input): Json<NewsInput>,
 ) -> Result<Json<News>, AppError> {
     tracing::info!("Publishing news");
-    
-    let title = input.get_title().to_owned();
-    let v = state.model.vector(&title).await?;
+
+    let title = input.get_title();
+    let v = state.model.vector(title).await?;
     let data = NewsData::new(&input, v);
 
-    let news = state.repo.create(data).await?;
+    let mut chunks = Vec::new();
+    for (i, text) in input.search_chunks().into_iter().enumerate() {
+        let chunk_v = state.model.vector(&text).await?;
+        chunks.push(ChunkInput {
+            chunk_index: i as i32,
+            chunk_text: text,
+            chunk_v,
+        });
+    }
+
+    let news = state.repo.create(data, chunks).await?;
     Ok(Json(news))
 }
 
@@ -170,7 +182,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_auth() {
         let mut repo = MockNewsRepository::new();
-        repo.expect_create().return_once(|_| {
+        repo.expect_create().return_once(|_, _| {
             Ok(News::new(
                 1,
                 "title".to_string(),
@@ -181,7 +193,7 @@ mod tests {
         });
 
         let mut vp = MockVectorProvider::new();
-        vp.expect_vector().return_once(|_| {
+        vp.expect_vector().returning(|_| {
             Ok(pgvector::Vector::from(vec![1.0, 2.0, 3.0]))
         });
 
