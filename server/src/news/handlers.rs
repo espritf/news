@@ -122,7 +122,7 @@ pub async fn publish(
     tracing::info!("Publishing news");
     
     let title = input.get_title().to_owned();
-    let v = state.model.vector(&title).await.unwrap();
+    let v = state.model.vector(&title).await?;
     let data = NewsData::new(&input, v);
 
     let news = state.repo.create(data).await?;
