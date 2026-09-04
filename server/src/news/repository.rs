@@ -5,8 +5,7 @@ use crate::schema::{news, news_chunks};
 use anyhow::Result;
 use axum::async_trait;
 use diesel::prelude::*;
-use diesel_async::scoped_futures::ScopedFutureExt;
-use diesel_async::{AsyncConnection, RunQueryDsl};
+use diesel_async::RunQueryDsl;
 use pgvector::VectorExpressionMethods;
 
 pub struct NewsRepositoryImpl {
@@ -68,36 +67,35 @@ impl NewsRepository for NewsRepositoryImpl {
         }
     }
 
-    async fn create(&self, input: NewsData, chunks: Vec<ChunkInput>) -> Result<News> {
+    async fn create(&self, input: NewsData) -> Result<News> {
         let mut conn = self.pool.get().await?;
 
-        let news: News = conn
-            .transaction::<_, diesel::result::Error, _>(|conn| {
-                async move {
-                    let news = diesel::insert_into(news::table)
-                        .values(&input)
-                        .returning(News::as_returning())
-                        .get_result::<News>(conn)
-                        .await?;
-
-                    let rows: Vec<NewsChunkData> = chunks
-                        .into_iter()
-                        .map(|chunk| NewsChunkData::new(news.id(), chunk))
-                        .collect();
-
-                    if !rows.is_empty() {
-                        diesel::insert_into(news_chunks::table)
-                            .values(&rows)
-                            .execute(conn)
-                            .await?;
-                    }
-
-                    Ok(news)
-                }
-                .scope_boxed()
-            })
+        let news = diesel::insert_into(news::table)
+            .values(&input)
+            .returning(News::as_returning())
+            .get_result::<News>(&mut conn)
             .await?;
 
         Ok(news)
+    }
+
+    async fn insert_chunks(&self, news_id: i32, chunks: Vec<ChunkInput>) -> Result<()> {
+        if chunks.is_empty() {
+            return Ok(());
+        }
+
+        let mut conn = self.pool.get().await?;
+
+        let rows: Vec<NewsChunkData> = chunks
+            .into_iter()
+            .map(|chunk| NewsChunkData::new(news_id, chunk))
+            .collect();
+
+        diesel::insert_into(news_chunks::table)
+            .values(&rows)
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
     }
 }

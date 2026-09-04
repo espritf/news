@@ -10,7 +10,8 @@ use mockall::automock;
 #[async_trait]
 pub trait NewsRepository: Send + Sync {
     async fn list(&self, params: ListParams) -> Result<Vec<News>>;
-    async fn create(&self, input: NewsData, chunks: Vec<ChunkInput>) -> Result<News>;
+    async fn create(&self, input: NewsData) -> Result<News>;
+    async fn insert_chunks(&self, news_id: i32, chunks: Vec<ChunkInput>) -> Result<()>;
 }
 
 #[cfg_attr(test, automock)]
