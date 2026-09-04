@@ -73,7 +73,7 @@
                 {#each day.items as item}
                     <div>
                         <div>
-                            <Player text={item.title}/>
+                            <Player text={item.content}/>
                             <span class="title" role="button" tabindex="0" onclick={() => toggleExpanded(item.id)} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpanded(item.id)}>
                                 {item.title}
                             </span>
