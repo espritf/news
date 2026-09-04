@@ -34,7 +34,7 @@ Postgres database), `make redo` (redo the last migration).
 
 Config is loaded via `dotenv-flow` (`.env` then `.env.local` overrides), see `src/main.rs`.
 
-- `.env` — shared, checked in: `DATABASE_URL`, `POSTGRES_*`, `SERVER_ADDR`, `EMBEDDING_MODEL`, `RUST_LOG`
+- `.env` — shared, checked in: `DATABASE_URL`, `POSTGRES_*`, `SERVER_ADDR`, `EMBEDDING_MODEL`, `OLLAMA_URL`, `RUST_LOG`
 - `.env.local` — gitignored, overrides locally: `NEWS_API_TOKEN`, `RUST_LOG`
 
 `EMBEDDING_MODEL` must match a model already pulled into the local Ollama daemon (see
@@ -62,8 +62,7 @@ Into<anyhow::Error>>`) so handler bodies can just use `?`.
 handling and both persistence and embedding, and what `#[cfg_attr(test, automock)]` (via
 `mockall`) mocks in `src/news/handlers.rs` tests. Anything reachable through these traits can be
 swapped without touching handlers — e.g. `transfomer::ollama::Model` is the only
-`VectorProvider` impl today, hitting `http://localhost:11434/api/embeddings` directly (not
-configurable — same host is assumed).
+`VectorProvider` impl today, hitting the URL from `OLLAMA_URL`
 
 ### Persistence (`src/news/repository.rs`, `src/pool.rs`, Diesel + `diesel-async`)
 

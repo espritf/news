@@ -11,12 +11,14 @@ pub mod ollama {
 
     pub struct Model {
         name: String,
+        url: String,
     }
 
     impl Model {
-        pub fn new(name: &str) -> Self {
+        pub fn new(name: &str, url: &str) -> Self {
             Self {
                 name: name.to_owned(),
+                url: url.to_owned(),
             }
         }
     }
@@ -37,7 +39,7 @@ pub mod ollama {
             let response = reqwest::Client::builder()
                 .timeout(Duration::new(240, 0))
                 .build()?
-                .post("http://localhost:11434/api/embeddings")
+                .post(&self.url)
                 .json(json)
                 .send()
                 .await?;

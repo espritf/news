@@ -30,7 +30,8 @@ async fn main() -> Result<()> {
     let repo = Arc::new(NewsRepositoryImpl::new(pool));
 
     let model = &env::var("EMBEDDING_MODEL")?;
-    let model = Arc::new(Model::new(model));
+    let ollama_url = &env::var("OLLAMA_URL")?;
+    let model = Arc::new(Model::new(model, ollama_url));
 
     let state = AppState { repo, model };
 
