@@ -16,6 +16,14 @@
         return Object.entries(days).map(([name, items]) => ({name, items}));
     }
 
+    function dayLabel(day) {
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (day === today) return "Today";
+        if (day === yesterday) return "Yesterday";
+        return day;
+    }
+
     function goupSearch(items) {
         return [{name: "Search results", items: items}];
     }
@@ -68,7 +76,7 @@
 
         {#each data as day }
         <div>
-            <h2>{day.name}</h2>
+            <h2>{dayLabel(day.name)}</h2>
             <div>
                 {#each day.items as item}
                     <div>
