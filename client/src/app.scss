@@ -1,53 +1,80 @@
 @import url('https://fonts.googleapis.com/css2?family=Dosis:wght@200..800&display=swap');
 
 :root {
-  font-family: "Dosis", Arial, sans-serif;
-  font-weight: 400;
-  font-size: 1.3em;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --pico-font-family: "Dosis", var(--pico-font-family-sans-serif);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #111111;
-    background-color: #ffffff;
+header.container {
+  padding-block-start: var(--pico-block-spacing-vertical);
+}
+
+h1 {
+  margin-bottom: 0.2em;
+}
+
+section > h2 {
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  padding-bottom: 0.3em;
+}
+
+article {
+  --pico-border-radius: 1rem;
+  padding: calc(var(--pico-spacing) * 1.5);
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    background: none;
+    border: none;
+    margin: 0 0 0.5em;
+    padding: 0;
+
+    details {
+      flex: 1;
+      min-width: 0;
+
+      summary {
+        position: relative;
+        padding-right: 1.25em;
+
+        &::after {
+          position: absolute;
+          top: 0.15em;
+          right: 0;
+          float: none;
+          margin: 0;
+        }
+      }
+    }
   }
-}
 
-body { padding: 0 5%; }
-h1, h2 { text-align: center; }
-.msg { text-align: center; }
+  footer {
+    background: none;
+    border: none;
+    margin: 0.5em 0 0;
+    padding: 0;
 
-button {
-  border: none;
-}
-
-button.round {
-  border-radius: 50%;
-  min-width: 2em;
-  padding: 0.5em;
-  margin: 0.5em;
-}
-
-.title {
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
+    a + a::before {
+      content: "· ";
+    }
   }
 }
 
 .content {
   opacity: 0.85;
-  margin: 0.3em 0;
-  font-size: 0.75em;
   white-space: pre-line;
+}
+
+button.round {
+  border-radius: 50%;
+  min-width: 2.2em;
+  height: 2.2em;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.msg {
+  text-align: center;
+  color: var(--pico-muted-color);
 }

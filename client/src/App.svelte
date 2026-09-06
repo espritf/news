@@ -40,16 +40,6 @@
     }
 
     let query = $state(undefined);
-    let expanded = $state(new Set());
-
-    function toggleExpanded(id) {
-        if (expanded.has(id)) {
-            expanded.delete(id);
-        } else {
-            expanded.add(id);
-        }
-        expanded = new Set(expanded);
-    }
 
     const search = (e) => {
         e.preventDefault();
@@ -60,49 +50,49 @@
 
 </script>
 
-<main>
-    <h1>news</h1>
+<header class="container">
+    <hgroup>
+        <h1>📰 News</h1>
+        <p>Aggregated stories, summarized and read aloud</p>
+    </hgroup>
+    <form role="search" onsubmit={search}>
+        <input type="search" name="query" placeholder="Search news..."/>
+        <button type="submit">Search</button>
+    </form>
+</header>
 
-    <div id="search">
-        <form onsubmit={search}>
-            <input type="text" name="query"/>
-            <button type="submit">Search</button>
-        </form>
-    </div>
-
+<main class="container">
     {#await data}
-        <p>Loading...</p>
+        <p aria-busy="true">Loading...</p>
     {:then data }
 
         {#each data as day }
-        <div>
+        <section>
             <h2>{dayLabel(day.name)}</h2>
-            <div>
-                {#each day.items as item}
-                    <div>
-                        <div>
-                            <Player text={item.content}/>
-                            <span class="title" role="button" tabindex="0" onclick={() => toggleExpanded(item.id)} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpanded(item.id)}>
-                                {item.title}
-                            </span>
-                            <br/>
-                            {#if expanded.has(item.id)}
-                                <div class="content">{item.content}</div>
-                            {/if}
-                            <small>
-                                {#each item.sources as source}
-                                    <a href="{source}" target="_blank">{new URL(source).host.split('.').reverse()[1]}</a>
-                                {/each}
-                                <a href="{item.link}" target="_blank">{item.source}</a>
-                                {new Date(item.pub_date).toUTCString()}
-                            </small>
-                        </div>
-                    </div>
-                {:else}
-                    <div class="msg">No news for {day.name}</div>
-                {/each}
-            </div>
-        </div>
+
+            {#each day.items as item}
+                <article>
+                    <header>
+                        <Player text={item.content}/>
+                        <details>
+                            <summary>{item.title}</summary>
+                            <p class="content">{item.content}</p>
+                        </details>
+                    </header>
+                    <footer>
+                        <small>
+                            {#each item.sources as source}
+                                <a href="{source}" target="_blank">{new URL(source).host.split('.').reverse()[1]}</a>
+                            {/each}
+                            <a href="{item.link}" target="_blank">{item.source}</a>
+                            &middot; {new Date(item.pub_date).toUTCString()}
+                        </small>
+                    </footer>
+                </article>
+            {:else}
+                <p class="msg">No news for {day.name}</p>
+            {/each}
+        </section>
         {/each}
 
     {/await}
