@@ -1,5 +1,6 @@
 <script>
     import Player from "./Player.svelte";
+    import Logo from "./Logo.svelte";
 
     let base = import.meta.env.VITE_API_URL;
 
@@ -52,7 +53,7 @@
 
 <header class="container">
     <hgroup>
-        <h1>📰 News</h1>
+        <h1 class="brand"><Logo/> News</h1>
         <p>Aggregated stories, summarized and read aloud</p>
     </hgroup>
     <form role="search" onsubmit={search}>
@@ -98,3 +99,11 @@
     {/await}
 
 </main>
+
+<style>
+    h1.brand {
+        display: flex;
+        align-items: center;
+        gap: 0.35em;
+    }
+</style>
