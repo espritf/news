@@ -36,6 +36,7 @@ fn main() -> Result<()> {
 
     let subscriber = tracing_subscriber::fmt()
         .compact()
+        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 

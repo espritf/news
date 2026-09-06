@@ -15,3 +15,6 @@ reset-republish:
 
 show:
 	sqlite3 var/aggregator.db 'select * from items'
+
+create-translator:
+	ollama create translator -f Modelfile
