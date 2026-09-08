@@ -1,86 +1,40 @@
-# CLAUDE.md
+# server
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Axum HTTP API (crate name `news`) backed by Postgres/pgvector: stores news items, chunks and
+embeds their content via a local Ollama model, and serves semantic-similarity search over `GET
+/news`.
 
-## What this is
-
-An Axum API server backed by Postgres + [pgvector](https://github.com/pgvector/pgvector): it
-accepts published news items (token-authenticated), generates a title embedding via a local
-[Ollama](https://ollama.ai) model, stores them, and serves a news listing with optional semantic
-search.
+## Project tree
 
 ```
-POST /news ──▶  embeds title via Ollama  ──▶  Postgres + pgvector  ◀──  GET /news (+ search)
+server/
+├── Cargo.toml             # Crate manifest (axum, diesel-async/postgres, pgvector, utoipa, ...)
+├── Makefile                # DB/task shortcuts via psql+diesel (create/clean/drop/redo/show)
+├── devenv.nix               # devenv shell: rust toolchain, postgres+pgvector, ollama process
+├── devenv.lock               # Locked devenv/nix inputs
+├── diesel.toml                # Diesel CLI config (schema output path, migrations dir, pgvector types)
+├── .env                        # Local environment vars (DATABASE_URL, NEWS_API_TOKEN, OLLAMA_URL, ...)
+├── .nvim.lua                    # Neovim project-local config (enables rust_analyzer)
+├── migrations/                   # Diesel SQL migrations for the postgres schema
+│   ├── .keep
+│   ├── 00000000000000_diesel_initial_setup/           # Diesel's updated_at trigger helper functions
+│   ├── 2023-12-11-100421_create_news/                 # Creates news table (title, pub_date, sources, title_v embedding)
+│   ├── 2026-09-03-195350-0000_add_news_content/       # Adds news.content column
+│   ├── 2026-09-04-140221-0000_create_news_chunks/     # Creates news_chunks table for per-chunk embeddings
+│   ├── 2026-09-04-143114-0000_drop_news_title_v/      # Drops the now-unused news.title_v column
+│   └── 2026-09-04-145346-0000_resize_chunk_v_to_1024/ # Resizes chunk_v to vector(1024) for the new embedding model
+└── src/
+    ├── main.rs             # Axum server entrypoint: loads env, builds AppState, wires routes/CORS/Swagger
+    ├── app.rs              # AppState + NewsRepository/VectorProvider traits (mockable via automock)
+    ├── pool.rs             # diesel-async deadpool Postgres connection pool
+    ├── schema.rs           # Diesel-generated schema (news, news_chunks) — do not hand-edit
+    ├── transfomer.rs       # Ollama embedding client implementing VectorProvider
+    └── news/
+        ├── mod.rs          # Re-exports the news submodules
+        ├── handlers.rs     # HTTP handlers + OpenAPI/Swagger docs for GET/POST /news
+        ├── model.rs        # News/NewsInput/NewsData/ChunkInput types, chunk_text splitting
+        ├── lister.rs       # Lists news, embedding an optional search query for similarity ordering
+        ├── publisher.rs    # Publishes a news item, embedding+storing chunks out-of-band
+        ├── repository.rs   # NewsRepositoryImpl: diesel-async queries against Postgres/pgvector
+        └── security.rs     # Auth middleware checking the `auth` header against the API token
 ```
-
-## Commands
-
-```sh
-devenv shell             # provides diesel-cli, openssl, pkg-config, ollama, rust-analyzer,
-                          # and starts Postgres with pgvector automatically (services.postgres)
-make create               # run diesel migrations (needs diesel-cli, DATABASE_URL)
-ollama pull <model>        # pull the model configured as EMBEDDING_MODEL, e.g. nomic-embed-text
-cargo run
-cargo check
-cargo clippy
-cargo test                 # unit tests live inline in src/news/handlers.rs
-cargo test test_create_auth  # run a single test
-```
-
-Other Makefile targets: `make clean` (delete all rows from `news`), `make drop` (drop the
-Postgres database), `make redo` (redo the last migration).
-
-### Environment
-
-Config is loaded via `dotenv-flow` (`.env` then `.env.local` overrides), see `src/main.rs`.
-
-- `.env` — shared, checked in: `DATABASE_URL`, `POSTGRES_*`, `SERVER_ADDR`, `EMBEDDING_MODEL`, `OLLAMA_URL`, `MAX_CHUNK_CHARS`, `RUST_LOG`
-- `.env.local` — gitignored, overrides locally: `NEWS_API_TOKEN`, `RUST_LOG`
-
-`EMBEDDING_MODEL` must match a model already pulled into the local Ollama daemon (see
-`Modelfile` for an example custom model); its output vector dimension must match the
-`title_v vector(N)` column in `migrations/`.
-
-## Architecture
-
-### Request flow (`src/news/handlers.rs`)
-
-`news::handlers::routes(token)` builds the router: `POST /news` is wrapped in
-`middleware::from_fn_with_state(token, security::auth)` (checks an `auth` header against
-`NEWS_API_TOKEN`), `GET /news` is unauthenticated. Both handlers pull
-`AppState` out of Axum state and go through `AppError` (`impl IntoResponse` + blanket `From<E:
-Into<anyhow::Error>>`) so handler bodies can just use `?`.
-
-- `publish` embeds the title via `state.model.vector(title)`, builds `NewsData` (input +
-  embedding), and calls `state.repo.create`.
-- `list` embeds the optional `search` query string the same way, wraps it in `ListParams`, and
-  calls `state.repo.list`. No `search` means a plain paginated listing.
-
-### `AppState` / trait seams (`src/app.rs`)
-
-`AppState` holds `Arc<dyn NewsRepository>` and `Arc<dyn VectorProvider>` — the seam between HTTP
-handling and both persistence and embedding, and what `#[cfg_attr(test, automock)]` (via
-`mockall`) mocks in `src/news/handlers.rs` tests. Anything reachable through these traits can be
-swapped without touching handlers — e.g. `transfomer::ollama::Model` is the only
-`VectorProvider` impl today, hitting the URL from `OLLAMA_URL`
-
-### Persistence (`src/news/repository.rs`, `src/pool.rs`, Diesel + `diesel-async`)
-
-`NewsRepositoryImpl` wraps a `pool::Pool` (a `deadpool`-backed `diesel-async` pool). `list`
-builds its `ORDER BY` dynamically: with a search vector it orders by `title_v.l2_distance(query)
-ASC` (nearest-neighbor search via pgvector), otherwise by `pub_date DESC` — both branches are
-boxed into the same `BoxableExpression` type so the query builder stays uniform. `create` is a
-plain `insert_into(news::table).returning(...)`.
-
-Schema is Diesel-generated (`diesel.toml` → `src/schema.rs`); after adding a migration under
-`migrations/`, run `make create` (or `diesel migration run`) to apply it and regenerate the
-schema file — don't hand-edit `schema.rs`. The single `news` table stores `sources` as a JSON
-array of source URLs, plus `title_v` (pgvector `vector(768)`, dimension fixed by the embedding
-model in use).
-
-### Error handling
-
-`anyhow::Result` throughout; `AppError` (`src/news/handlers.rs`) is the only place errors surface
-as HTTP — every error becomes a bare `500` (message logged via `tracing::error!`, not returned to
-the client). There's no per-error-kind status mapping (e.g. a bad `search` embedding and a DB
-outage look identical to the caller).
