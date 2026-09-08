@@ -54,7 +54,7 @@
 <header class="container">
     <hgroup>
         <h1 class="brand"><Logo/> News</h1>
-        <p>Aggregated stories, summarized and read aloud</p>
+        <p>Not every news story is worth reading.</p>
     </hgroup>
     <form role="search" onsubmit={search}>
         <input type="search" name="query" placeholder="Search news..."/>
