@@ -7,7 +7,7 @@ sentence-embedding vectors (pgvector).
 ```
 aggregator  ──fetch──▶  sources.toml (RSS/HTML)  ──▶  SQLite (var/aggregator.db)
     │
-    └──publish──▶  translates titles (Google Translate) ──▶  POST /news (server)
+    └──publish──▶  translates titles/content (Ollama) ──▶  POST /news (server)
 
 server  ──▶  embeds title via Ollama ──▶  Postgres + pgvector ──▶  GET /news (+ search)
 
@@ -17,8 +17,9 @@ client  ──▶  fetches /news, groups by day, text-to-speech playback, semant
 ### Components
 
 - **[aggregator](aggregator)** — Rust CLI that fetches news from configured RSS/HTML
-  sources into a local SQLite database, translates untranslated titles to English (Google
-  Translate API), and publishes them to the server's API.
+  sources into a local SQLite database, translates untranslated titles and content to
+  English (via a local [Ollama](https://ollama.ai) model), and publishes them to the
+  server's API.
 - **[server](server)** — Axum API server backed by Postgres + [pgvector](https://github.com/pgvector/pgvector).
   Accepts published news (token-authenticated), generates title embeddings via a local
   [Ollama](https://ollama.ai) model, and serves news listing with optional semantic search.
@@ -33,8 +34,9 @@ Each component has a devenv config (`server`, `client`) or can be run directly w
 
 ```sh
 cd aggregator
-# .env holds shared config (DATABASE_URL, NEWS_API_ENDPOINT); create a
-# gitignored .env.local with secrets: GOOGLE_TRANSLATE_API_KEY, NEWS_API_TOKEN
+# .env holds shared config (DATABASE_URL, NEWS_API_ENDPOINT, OLLAMA_ENDPOINT,
+# OLLAMA_TRANSLATOR_MODEL); create a gitignored .env.local with secrets: NEWS_API_TOKEN
+ollama pull <OLLAMA_TRANSLATOR_MODEL>  # e.g. `translator` (see aggregator/Modelfile)
 make create           # run diesel migrations, creates var/aggregator.db
 cargo run -- fetch    # collect news from sources.toml
 cargo run -- publish  # translate + publish unpublished items to the server
