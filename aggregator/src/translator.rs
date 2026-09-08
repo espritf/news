@@ -30,7 +30,7 @@ mod ollama {
     impl Translator {
         pub fn new() -> Self {
             let client = reqwest::blocking::Client::builder()
-                .timeout(Some(Duration::new(600, 0)))
+                .timeout(Some(Duration::new(1200, 0)))
                 .build()
                 .unwrap();
             let endpoint = std::env::var("OLLAMA_ENDPOINT")
