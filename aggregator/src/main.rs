@@ -4,7 +4,7 @@ pub mod translator;
 pub mod publisher;
 pub mod error;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use diesel::prelude::*;
 use serde::Deserialize;
@@ -46,7 +46,10 @@ fn main() -> Result<()> {
     match &cli.command {
         Commands::Fetch => {
             tracing::info!("Start fetch task");
-            let config: Config = toml::from_str(fs::read_to_string("sources.toml")?.as_str())?;
+            let sources_toml = fs::read_to_string("sources.toml")
+                .context("Failed to read sources.toml (expected in the current working directory)")?;
+            let config: Config = toml::from_str(sources_toml.as_str())
+                .context("Failed to parse sources.toml")?;
             collector::collect(conn, config.sources)?;
         },
         Commands::Publish => {
