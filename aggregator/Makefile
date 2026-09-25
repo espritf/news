@@ -1,20 +1,23 @@
 include .env
 
+DB_PATH := $(patsubst sqlite://%,%,$(DATABASE_URL))
+
 create:
-	mkdir -p var
-	diesel migration run --database-url=$(DATABASE_URL)
+	test -f $(DB_PATH) || (mkdir -p var && diesel migration run --database-url=$(DATABASE_URL))
 
 clean:
-	sqlite3 var/aggregator.db 'delete from items'
+	sqlite3 $(DB_PATH) 'delete from items'
 
 drop:
-	rm -f aggregator/var/aggregator.db
+	rm -f $(DB_PATH)
 
 reset-republish:
-	sqlite3 var/aggregator.db 'update items set published_id = null'
+	sqlite3 $(DB_PATH) 'update items set published_id = null'
 
 show:
-	sqlite3 var/aggregator.db 'select * from items'
+	sqlite3 $(DB_PATH) 'select * from items'
 
 create-translator:
-	ollama create translator -f Modelfile
+	ollama show translator >/dev/null 2>&1 || ollama create translator -f Modelfile
+
+build: create create-translator
