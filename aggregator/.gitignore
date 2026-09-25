@@ -1,5 +1,4 @@
 /var
-sources.toml
 .env.local
 /.devenv
 /migrations/.diesel_lock

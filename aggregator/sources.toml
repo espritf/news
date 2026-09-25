@@ -1,0 +1,17 @@
+[[sources]]
+type = "rss"
+name = "Newsmaker"
+language = "ru"
+url = "https://newsmaker.md/feed/"
+
+[[sources]]
+type = "rss"
+name = "Newsmaker"
+language = "ro"
+url = "https://newsmaker.md/ro/feed/"
+
+[[sources]]
+type = "rss"
+name = "Moldpress"
+language = "ro"
+url = "https://www.moldpres.md/config/rss.php?lang=rom"
