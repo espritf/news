@@ -1,5 +1,8 @@
 { pkgs, ... }:
 
+let
+  postgresql = pkgs.postgresql_16;
+in
 {
   packages = [
     pkgs.diesel-cli
@@ -13,6 +16,11 @@
   # GCC's C23 default (gnu23 rejects the loose function-pointer initializers
   # in st.c). Force the older standard for all C deps built via the cc crate.
   # env.CFLAGS = "-std=gnu17";
+
+  # diesel's pq-sys links against libpq but only locates it via pg_config or
+  # PQ_LIB_DIR (it does not use pkg-config by default). Point it at libpq from
+  # the same postgres package the service below runs.
+  env.PQ_LIB_DIR = "${postgresql.lib}/lib";
 
   languages.rust = {
     enable = true;
@@ -33,7 +41,7 @@
 
   services.postgres = {
     enable = true;
-    package = pkgs.postgresql_16;
+    package = postgresql;
     extensions = extensions: [ extensions.pgvector ];
     listen_addresses = "localhost";
     port = 5432;
