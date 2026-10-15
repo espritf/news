@@ -1,10 +1,11 @@
 use super::model::EmbeddingJob;
-use crate::app::{EmbeddingJobRepository, VectorProvider};
+use crate::app::{EmbeddingJobRepository, EventSink, VectorProvider};
+use crate::events::EmbeddingEvent;
 use crate::news::chunker::chunk_text;
 use crate::news::model::ChunkInput;
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// How long a claimed job stays invisible to other workers. Must comfortably exceed the time
 /// to embed a long article; if the worker dies, the job is picked up again once it expires.
@@ -19,6 +20,7 @@ const MAX_BACKOFF: Duration = Duration::from_secs(60 * 60);
 pub struct EmbeddingWorker {
     jobs: Arc<dyn EmbeddingJobRepository>,
     model: Arc<dyn VectorProvider>,
+    events: Arc<dyn EventSink>,
     max_chunk_chars: usize,
 }
 
@@ -26,11 +28,13 @@ impl EmbeddingWorker {
     pub fn new(
         jobs: Arc<dyn EmbeddingJobRepository>,
         model: Arc<dyn VectorProvider>,
+        events: Arc<dyn EventSink>,
         max_chunk_chars: usize,
     ) -> Self {
         Self {
             jobs,
             model,
+            events,
             max_chunk_chars,
         }
     }
@@ -56,8 +60,16 @@ impl EmbeddingWorker {
 
         tracing::info!("Embedding news {} (attempt {})", job.news_id, job.attempts);
 
-        match self.embed(&job).await {
-            Ok(chunks) => self.jobs.complete(job.news_id, chunks).await?,
+        let started = Instant::now();
+        let result = self.embed(&job).await;
+        let duration = started.elapsed();
+
+        let event = match result {
+            Ok(chunks) => {
+                let chunk_count = chunks.len();
+                self.jobs.complete(job.news_id, chunks).await?;
+                event(&job, "completed", duration, chunk_count, None)
+            }
             Err(e) => {
                 let retry_in = backoff(job.attempts);
                 tracing::error!(
@@ -67,8 +79,15 @@ impl EmbeddingWorker {
                     retry_in,
                     e
                 );
-                self.jobs.fail(job.news_id, format!("{:#}", e), retry_in).await?;
+                let error = format!("{:#}", e);
+                self.jobs.fail(job.news_id, error.clone(), retry_in).await?;
+                event(&job, "failed", duration, 0, Some(error))
             }
+        };
+
+        // Statistics are best-effort: never let them block embedding.
+        if let Err(e) = self.events.embedding(event).await {
+            tracing::warn!("Failed to record embedding event: {:?}", e);
         }
 
         Ok(true)
@@ -88,6 +107,24 @@ impl EmbeddingWorker {
     }
 }
 
+fn event(
+    job: &EmbeddingJob,
+    kind: &str,
+    duration: Duration,
+    chunk_count: usize,
+    error: Option<String>,
+) -> EmbeddingEvent {
+    EmbeddingEvent {
+        kind: kind.to_string(),
+        news_id: job.news_id,
+        attempts: job.attempts,
+        duration_ms: duration.as_millis() as u32,
+        chunk_count: chunk_count as u32,
+        content_chars: job.content.chars().count() as u32,
+        error,
+    }
+}
+
 /// Exponential backoff: 30s, 1m, 2m, ... capped at one hour.
 fn backoff(attempts: i32) -> Duration {
     let exp = attempts.saturating_sub(1).clamp(0, 16) as u32;
@@ -97,7 +134,7 @@ fn backoff(attempts: i32) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::{MockEmbeddingJobRepository, MockVectorProvider};
+    use crate::app::{MockEmbeddingJobRepository, MockEventSink, MockVectorProvider};
     use mockall::predicate::eq;
 
     fn job(content: &str) -> EmbeddingJob {
@@ -113,7 +150,12 @@ mod tests {
         let mut jobs = MockEmbeddingJobRepository::new();
         jobs.expect_claim().return_once(|_| Ok(None));
 
-        let worker = EmbeddingWorker::new(Arc::new(jobs), Arc::new(MockVectorProvider::new()), 10);
+        let worker = EmbeddingWorker::new(
+            Arc::new(jobs),
+            Arc::new(MockVectorProvider::new()),
+            Arc::new(MockEventSink::new()),
+            10,
+        );
 
         assert!(!worker.run_once().await.unwrap());
     }
@@ -136,7 +178,19 @@ mod tests {
             .times(2)
             .returning(|_| Ok(pgvector::Vector::from(vec![1.0])));
 
-        let worker = EmbeddingWorker::new(Arc::new(jobs), Arc::new(vp), 7);
+        let mut events = MockEventSink::new();
+        events.expect_embedding()
+            .withf(|e| {
+                e.kind == "completed"
+                    && e.news_id == 7
+                    && e.attempts == 2
+                    && e.chunk_count == 2
+                    && e.content_chars == 13
+                    && e.error.is_none()
+            })
+            .return_once(|_| Ok(()));
+
+        let worker = EmbeddingWorker::new(Arc::new(jobs), Arc::new(vp), Arc::new(events), 7);
 
         assert!(worker.run_once().await.unwrap());
     }
@@ -154,7 +208,17 @@ mod tests {
         vp.expect_vector()
             .return_once(|_| Err(anyhow::anyhow!("ollama down")));
 
-        let worker = EmbeddingWorker::new(Arc::new(jobs), Arc::new(vp), 7);
+        // A failure to record the event must not fail the job.
+        let mut events = MockEventSink::new();
+        events.expect_embedding()
+            .withf(|e| {
+                e.kind == "failed"
+                    && e.chunk_count == 0
+                    && e.error.as_deref() == Some("ollama down")
+            })
+            .return_once(|_| Err(anyhow::anyhow!("clickhouse down")));
+
+        let worker = EmbeddingWorker::new(Arc::new(jobs), Arc::new(vp), Arc::new(events), 7);
 
         assert!(worker.run_once().await.unwrap());
     }

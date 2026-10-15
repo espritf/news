@@ -10,6 +10,7 @@ default-run = "news"
 anyhow = "1.0.75"
 axum = "0.7.4"
 chrono = { version = "0.4.31", features = ["serde"] }
+clickhouse = "0.15"
 diesel = { version = "2.1.4", features = ["chrono", "serde_json", "postgres"] }
 diesel-async = { version = "0.4.1", features = ["postgres", "deadpool"] }
 dotenv-flow = "0.16.2"

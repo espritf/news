@@ -14,3 +14,9 @@ redo:
 	
 show:
 	psql -d $(POSTGRES_DB) -c "select * from news;"
+
+ollama:
+	ollama pull $(EMBEDDING_MODEL)
+
+clickhouse:
+	clickhouse client --multiquery < clickhouse/events.sql

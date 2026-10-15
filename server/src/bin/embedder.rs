@@ -1,6 +1,7 @@
 use anyhow::Result;
 use news::embedder::repository::EmbeddingJobRepositoryImpl;
 use news::embedder::worker::EmbeddingWorker;
+use news::events::ClickHouseEvents;
 use news::pool::Pool;
 use news::transfomer::ollama::Model;
 use std::env;
@@ -20,11 +21,16 @@ async fn main() -> Result<()> {
     let ollama_url = &env::var("OLLAMA_URL")?;
     let model = Arc::new(Model::new(model, ollama_url));
 
+    let events = Arc::new(ClickHouseEvents::new(
+        &env::var("CLICKHOUSE_URL")?,
+        &env::var("CLICKHOUSE_DB")?,
+    ));
+
     let max_chunk_chars = env::var("MAX_CHUNK_CHARS")?.parse()?;
 
     tracing::info!("embedding worker started");
 
-    EmbeddingWorker::new(jobs, model, max_chunk_chars).run().await;
+    EmbeddingWorker::new(jobs, model, events, max_chunk_chars).run().await;
 
     Ok(())
 }

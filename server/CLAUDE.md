@@ -11,11 +11,13 @@ Postgres-backed `embedding_jobs` queue.
 server/
 ├── Cargo.toml             # Crate manifest (axum, diesel-async/postgres, pgvector, utoipa, ...)
 ├── Makefile                # DB/task shortcuts via psql+diesel (create/clean/drop/redo/show)
-├── devenv.nix               # devenv shell: rust toolchain, postgres+pgvector, ollama process
+├── devenv.nix               # devenv shell: rust toolchain, postgres+pgvector, clickhouse, ollama process
 ├── devenv.lock               # Locked devenv/nix inputs
 ├── diesel.toml                # Diesel CLI config (schema output path, migrations dir, pgvector types)
 ├── .env                        # Local environment vars (DATABASE_URL, NEWS_API_TOKEN, OLLAMA_URL, ...)
 ├── .nvim.lua                    # Neovim project-local config (enables rust_analyzer)
+├── clickhouse/
+│   └── events.sql                # ClickHouse statistics schema (embedding_events); applied by `make clickhouse`
 ├── migrations/                   # Diesel SQL migrations for the postgres schema
 │   ├── .keep
 │   ├── 00000000000000_diesel_initial_setup/           # Diesel's updated_at trigger helper functions
@@ -28,7 +30,8 @@ server/
 └── src/
     ├── lib.rs              # Library root shared by both binaries
     ├── main.rs             # Axum server entrypoint: loads env, builds AppState, wires routes/CORS/Swagger
-    ├── app.rs              # AppState + NewsRepository/EmbeddingJobRepository/VectorProvider traits (automock)
+    ├── app.rs              # AppState + NewsRepository/EmbeddingJobRepository/EventSink/VectorProvider traits (automock)
+    ├── events.rs           # EmbeddingEvent + ClickHouseEvents (EventSink impl) for statistics
     ├── pool.rs             # diesel-async deadpool Postgres connection pool
     ├── schema.rs           # Diesel-generated schema (news, news_chunks) — do not hand-edit
     ├── transfomer.rs       # Ollama embedding client implementing VectorProvider

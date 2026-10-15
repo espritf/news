@@ -55,6 +55,11 @@ in
     ];
   };
 
+  services.clickhouse = {
+    enable = true;
+    config = "";
+  };
+
   scripts.server.exec = ''
     cargo run
   '';

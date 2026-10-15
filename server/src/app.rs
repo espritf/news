@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use crate::embedder::model::EmbeddingJob;
+use crate::events::EmbeddingEvent;
 use crate::news::lister::NewsLister;
 use crate::news::model::{ChunkInput, ListParams, News, NewsData};
 use crate::news::publisher::NewsPublisher;
@@ -29,6 +30,13 @@ pub trait EmbeddingJobRepository: Send + Sync {
     async fn complete(&self, news_id: i32, chunks: Vec<ChunkInput>) -> Result<()>;
     /// Releases the job and schedules it to be retried after `retry_in`.
     async fn fail(&self, news_id: i32, error: String, retry_in: Duration) -> Result<()>;
+}
+
+/// Statistics events for later analysis.
+#[cfg_attr(test, automock)]
+#[async_trait]
+pub trait EventSink: Send + Sync {
+    async fn embedding(&self, event: EmbeddingEvent) -> Result<()>;
 }
 
 #[cfg_attr(test, automock)]
