@@ -1,3 +1,4 @@
+pub mod chunker;
 pub mod handlers;
 pub mod lister;
 pub mod model;

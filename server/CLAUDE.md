@@ -31,8 +31,9 @@ server/
     ├── transfomer.rs       # Ollama embedding client implementing VectorProvider
     └── news/
         ├── mod.rs          # Re-exports the news submodules
+        ├── chunker.rs      # chunk_text: splits text into word-bounded chunks for embedding
         ├── handlers.rs     # HTTP handlers + OpenAPI/Swagger docs for GET/POST /news
-        ├── model.rs        # News/NewsInput/NewsData/ChunkInput types, chunk_text splitting
+        ├── model.rs        # News/NewsInput/NewsData/ChunkInput types
         ├── lister.rs       # Lists news, embedding an optional search query for similarity ordering
         ├── publisher.rs    # Publishes a news item, embedding+storing chunks out-of-band
         ├── repository.rs   # NewsRepositoryImpl: diesel-async queries against Postgres/pgvector
