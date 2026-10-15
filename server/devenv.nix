@@ -10,6 +10,7 @@ in
     pkgs.pkg-config
     pkgs.ollama
     pkgs.rust-analyzer
+    pkgs.sqls
   ];
 
   # onig_sys vendors an old oniguruma C source that fails to compile under
@@ -21,6 +22,10 @@ in
   # PQ_LIB_DIR (it does not use pkg-config by default). Point it at libpq from
   # the same postgres package the service below runs.
   env.PQ_LIB_DIR = "${postgresql.lib}/lib";
+
+  # Load .env into the shell so tools started from it (e.g. sqls in nvim) see
+  # DATABASE_URL.
+  dotenv.enable = true;
 
   languages.rust = {
     enable = true;
