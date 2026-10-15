@@ -55,7 +55,11 @@ in
     ];
   };
 
-  scripts.run.exec = ''
+  scripts.server.exec = ''
     cargo run
+  '';
+
+  scripts.embedder.exec = ''
+    cargo run --bin embedder
   '';
 }

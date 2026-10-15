@@ -1,11 +1,12 @@
 use crate::app::NewsRepository;
-use super::model::{ChunkInput, ListParams, News, NewsChunkData, NewsData};
+use super::model::{ListParams, News, NewsData};
 use crate::pool::Pool;
-use crate::schema::{news, news_chunks};
+use crate::schema::{embedding_jobs, news, news_chunks};
 use anyhow::Result;
 use axum::async_trait;
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+use diesel_async::scoped_futures::ScopedFutureExt;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use pgvector::VectorExpressionMethods;
 
 pub struct NewsRepositoryImpl {
@@ -70,32 +71,26 @@ impl NewsRepository for NewsRepositoryImpl {
     async fn create(&self, input: NewsData) -> Result<News> {
         let mut conn = self.pool.get().await?;
 
-        let news = diesel::insert_into(news::table)
-            .values(&input)
-            .returning(News::as_returning())
-            .get_result::<News>(&mut conn)
+        let news = conn
+            .transaction::<_, anyhow::Error, _>(|conn| {
+                async move {
+                    let news = diesel::insert_into(news::table)
+                        .values(&input)
+                        .returning(News::as_returning())
+                        .get_result::<News>(conn)
+                        .await?;
+
+                    diesel::insert_into(embedding_jobs::table)
+                        .values(embedding_jobs::news_id.eq(news.id()))
+                        .execute(conn)
+                        .await?;
+
+                    Ok(news)
+                }
+                .scope_boxed()
+            })
             .await?;
 
         Ok(news)
-    }
-
-    async fn insert_chunks(&self, news_id: i32, chunks: Vec<ChunkInput>) -> Result<()> {
-        if chunks.is_empty() {
-            return Ok(());
-        }
-
-        let mut conn = self.pool.get().await?;
-
-        let rows: Vec<NewsChunkData> = chunks
-            .into_iter()
-            .map(|chunk| NewsChunkData::new(news_id, chunk))
-            .collect();
-
-        diesel::insert_into(news_chunks::table)
-            .values(&rows)
-            .execute(&mut conn)
-            .await?;
-
-        Ok(())
     }
 }

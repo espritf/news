@@ -1,4 +1,3 @@
-use super::chunker::chunk_text;
 use crate::schema::{news, news_chunks};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
@@ -55,12 +54,6 @@ pub struct NewsInput {
 impl NewsInput {
     pub fn get_content(&self) -> &str {
         &self.content
-    }
-
-    /// Text used for content-based semantic search: the article content, chunked by
-    /// `chunk_text` before embedding so long articles don't exceed the model's context window.
-    pub fn search_chunks(&self, max_chars: usize) -> Vec<String> {
-        chunk_text(&self.content, max_chars)
     }
 }
 

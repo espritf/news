@@ -91,9 +91,10 @@ pub async fn list(
 
 /// Publish news
 ///
-/// Stores the news item and returns immediately; the content is chunked and embedded via the
-/// configured Ollama model in the background, so search results for a just-published item may
-/// lag briefly behind its availability in `GET /news`. Requires the `auth` header to match the
+/// Stores the news item and returns immediately; an embedding job is queued in the same
+/// transaction and the `embedder` worker chunks and embeds the content via the configured
+/// Ollama model, so search results for a just-published item lag behind its availability in
+/// `GET /news`. Requires the `auth` header to match the
 /// configured API token.
 #[utoipa::path(
     post,
@@ -141,11 +142,7 @@ mod tests {
 
         let repo = Arc::new(repo);
         let model = Arc::new(vp);
-        let state = AppState {
-            repo,
-            model,
-            max_chunk_chars: 1024,
-        };
+        let state = AppState { repo, model };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);
@@ -172,20 +169,13 @@ mod tests {
                 "content".to_string(),
             ))
         });
-        repo.expect_insert_chunks().returning(|_, _| Ok(()));
 
         let mut vp = MockVectorProvider::new();
-        vp.expect_vector().returning(|_| {
-            Ok(pgvector::Vector::from(vec![1.0, 2.0, 3.0]))
-        });
+        vp.expect_vector().never();
 
         let repo = Arc::new(repo);
         let model = Arc::new(vp);
-        let state = AppState {
-            repo,
-            model,
-            max_chunk_chars: 1024,
-        };
+        let state = AppState { repo, model };
         let token = "test".to_string();
 
         let app = routes(&token).with_state(state);

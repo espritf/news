@@ -1,19 +1,13 @@
-pub mod app;
-pub mod schema;
-pub mod pool;
-pub mod transfomer;
-pub mod news;
-
-use crate::news::handlers::ApiDoc;
-use crate::news::repository::NewsRepositoryImpl;
 use anyhow::Result;
-use app::AppState;
-use pool::Pool;
+use news::app::AppState;
+use news::news::handlers::{routes, ApiDoc};
+use news::news::repository::NewsRepositoryImpl;
+use news::pool::Pool;
+use news::transfomer::ollama::Model;
 use std::env;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use transfomer::ollama::Model;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -33,19 +27,13 @@ async fn main() -> Result<()> {
     let ollama_url = &env::var("OLLAMA_URL")?;
     let model = Arc::new(Model::new(model, ollama_url));
 
-    let max_chunk_chars = env::var("MAX_CHUNK_CHARS").expect("Expected to be set").parse()?;
-
-    let state = AppState {
-        repo,
-        model,
-        max_chunk_chars,
-    };
+    let state = AppState { repo, model };
 
     let cors = CorsLayer::new().allow_origin(Any);
 
     let token = env::var("NEWS_API_TOKEN")?;
 
-    let app = news::handlers::routes(&token)
+    let app = routes(&token)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))

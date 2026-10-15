@@ -4,6 +4,19 @@ diesel::table! {
     use diesel::sql_types::*;
     use pgvector::sql_types::*;
 
+    embedding_jobs (news_id) {
+        news_id -> Int4,
+        attempts -> Int4,
+        last_error -> Nullable<Text>,
+        run_after -> Timestamptz,
+        locked_until -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use pgvector::sql_types::*;
+
     news (id) {
         id -> Int4,
         sources -> Json,
@@ -26,6 +39,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(embedding_jobs -> news (news_id));
 diesel::joinable!(news_chunks -> news (news_id));
 
-diesel::allow_tables_to_appear_in_same_query!(news, news_chunks,);
+diesel::allow_tables_to_appear_in_same_query!(embedding_jobs, news, news_chunks,);
